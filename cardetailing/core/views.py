@@ -5,7 +5,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import UserCreateSerializer
+from .serializers import UserCreateSerializer, ChangePasswordSerializer
 
 
 class RegisterAPIView(APIView):
@@ -25,3 +25,19 @@ class RegisterAPIView(APIView):
         else:
             return Response(serialized.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ChangePasswordAPIView(APIView):
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if serializer.initial_data["password"] != serializer.initial_data["passwordConfirm"]:
+            return Response({"error": "Password are not the same"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user is None:
+            return Response({"error": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        request.user.set_password(serializer.initial_data["password"])
+        request.user.save()
+        return Response({"message": "Password changed success"}, status=status.HTTP_200_OK)

@@ -7,3 +7,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
         fields = ("username", "email", "password")
 
+
+class ChangePasswordSerializer(serializers.ModelSerializer):
+    passwordConfirm = serializers.CharField(max_length=50)
+
+    class Meta:
+        model = User
+        fields = ("password", "passwordConfirm")
