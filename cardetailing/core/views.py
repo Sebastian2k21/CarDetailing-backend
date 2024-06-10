@@ -2,10 +2,12 @@ from django.contrib.auth.models import User
 from django.contrib.messages import api
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import UserCreateSerializer, ChangePasswordSerializer
+from .models import CarService
+from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer
 
 
 class RegisterAPIView(APIView):
@@ -41,3 +43,10 @@ class ChangePasswordAPIView(APIView):
         request.user.set_password(serializer.initial_data["password"])
         request.user.save()
         return Response({"message": "Password changed success"}, status=status.HTTP_200_OK)
+
+
+class CarServiceListView(ListAPIView):
+    serializer_class = CarServiceSerializer
+    queryset = CarService.objects.all()
+    authentication_classes = []
+    permission_classes = []

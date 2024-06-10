@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from .models import CarService
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,3 +16,9 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("password", "passwordConfirm")
+
+
+class CarServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CarService
+        fields = "__all__"
