@@ -15,4 +15,5 @@ urlpatterns = [
     path('change-password', views.ChangePasswordAPIView.as_view()),
 
     path('services', views.CarServiceListView.as_view()),
+    path('services/<pk>', views.CarServiceDetailsView.as_view()),
 ]

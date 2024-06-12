@@ -1,8 +1,9 @@
+from bson import ObjectId
 from django.contrib.auth.models import User
 from django.contrib.messages import api
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -50,3 +51,13 @@ class CarServiceListView(ListAPIView):
     queryset = CarService.objects.all()
     authentication_classes = []
     permission_classes = []
+
+
+class CarServiceDetailsView(RetrieveAPIView):
+    serializer_class = CarServiceSerializer
+    authentication_classes = []
+    permission_classes = []
+
+    def get_object(self):
+        return CarService.objects.filter(_id=ObjectId(self.kwargs["pk"])).first()
+
