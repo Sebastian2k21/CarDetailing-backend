@@ -20,7 +20,18 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         fields = ("password", "passwordConfirm")
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username"]
+
+
 class CarServiceSerializer(serializers.ModelSerializer):
+    detailer = UserSerializer()
+
     class Meta:
         model = CarService
         fields = "__all__"
+
+
+
