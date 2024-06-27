@@ -1,14 +1,14 @@
 from bson import ObjectId
 from django.contrib.auth.models import User
-from django.contrib.messages import api
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import CarService, UserDetails, Role
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer
+from .utils import is_correct_iso_date, get_dates_diff_days
+from datetime import datetime, timedelta
 
 
 class RegisterAPIView(APIView):
@@ -71,3 +71,35 @@ class CarServiceDetailsView(RetrieveAPIView):
     def get_object(self):
         return CarService.objects.filter(_id=ObjectId(self.kwargs["pk"])).first()
 
+
+class CarServiceAvailableSchedule(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, pk, date_from, date_to):
+        if not is_correct_iso_date(date_from) or not is_correct_iso_date(date_to):
+            return Response({"message": "Invalid date format, use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
+        if get_dates_diff_days(date_from, date_to) > 31:
+            return Response({"message": "Date range is too large"}, status=status.HTTP_400_BAD_REQUEST)
+
+        service = get_object_or_404(CarService, _id=ObjectId(pk))
+        date_from = datetime.fromisoformat(date_from)
+        date_to = datetime.fromisoformat(date_to)
+
+        result = {}
+        while date_from <= date_to:
+            schedules = service.schedules.filter(day_of_week=date_from.weekday()+1).all()
+            available_time = list()
+            result[date_from.strftime("%Y-%m-%d")] = available_time
+            if schedules:
+                for sh in schedules:
+                    submit_exists = False
+                    for submit in sh.submits.all():
+                        if submit.date.date() == date_from.date():
+                            submit_exists = True
+                            break
+                    if not submit_exists:
+                        available_time.append(str(sh.time))
+
+            date_from += timedelta(days=1)
+        return Response(result, status=status.HTTP_200_OK)
