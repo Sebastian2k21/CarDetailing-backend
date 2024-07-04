@@ -1,51 +1,48 @@
 from django.contrib.auth.models import User
 from djongo import models
-import uuid
 
 
 class CarService(models.Model):
-    id = models.UUIDField(default=uuid.uuid4, editable=False) #TODO moze lepiej to dac na string? bedzie sie odpowiednio wiazac?
+    id = models.IntegerField()
     _id = models.ObjectIdField()
     name = models.CharField(max_length=100)
     price = models.FloatField()
     description = models.TextField()
     image = models.ImageField()
-    detailer = models.ForeignKey(to=User, on_delete=models.PROTECT, related_name="sevices", null=True)
+    detailer_id = models.IntegerField()
 
     def __str__(self):
-        return f"[{self._id}] {self.name} {self.detailer.username}"
+        return f"[{self._id}] {self.name} {self.detailer_id}"
 
 
 class Role(models.Model):
-    id = models.ObjectIdField()
     name = models.CharField(max_length=50)
     display_name = models.CharField(max_length=50)
 
 
 class UserDetails(models.Model):
-    id = models.UUIDField(default=uuid.uuid4, editable=False)
     _id = models.ObjectIdField()
-    user = models.OneToOneField(to=User, on_delete=models.PROTECT, related_name="role")
-    role = models.ForeignKey(to=Role, on_delete=models.PROTECT, related_name="user_roles")
+    user_id = models.IntegerField()
+    role_id = models.IntegerField()
 
 
 class CarServiceSchedule(models.Model):
-    id = models.UUIDField(default=uuid.uuid4, editable=False)
     _id = models.ObjectIdField()
-    service = models.ForeignKey(to=CarService, on_delete=models.PROTECT, related_name="schedules")
+    id = models.IntegerField()
+    service_id = models.IntegerField()
     day_of_week = models.PositiveIntegerField()
     time = models.TimeField()
 
     def __str__(self):
-        return f"{self.service} | {self.day_of_week} {self.time}"
+        return f"{self.service_id} | {self.day_of_week} {self.time}"
 
 
 class CarServiceScheduleSubmit(models.Model):
     class Meta:
-        unique_together = ("date", "schedule")
+        unique_together = ("date", "schedule_id")
 
-    id = models.UUIDField(default=uuid.uuid4, editable=False)
     _id = models.ObjectIdField()
+    id = models.IntegerField()
     date = models.DateTimeField()
-    schedule = models.ForeignKey(to=CarServiceSchedule, on_delete=models.PROTECT, related_name="submits")
-    user = models.ForeignKey(to=User, on_delete=models.PROTECT, related_name="submits")
+    schedule_id = models.IntegerField()
+    user_id = models.IntegerField()

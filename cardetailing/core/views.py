@@ -5,7 +5,7 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import CarService, UserDetails, Role
+from .models import CarService, UserDetails, Role, CarServiceScheduleSubmit, CarServiceSchedule
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer
 from .utils import is_correct_iso_date, get_dates_diff_days
 from datetime import datetime, timedelta
@@ -25,14 +25,15 @@ class RegisterAPIView(APIView):
         if user:
             return Response({"message": "User already exists!"}, status=status.HTTP_400_BAD_REQUEST)
 
+        role = get_object_or_404(Role, name=serialized.initial_data['role'])
+
         if serialized.is_valid():
             new_user = User.objects.create_user(
                 username=serialized.initial_data['username'],
                 email=serialized.initial_data['email'],
                 password=serialized.initial_data['password']
             )
-            role = get_object_or_404(Role, name=serialized.initial_data['role'])
-            UserDetails(user=new_user, role=role).save()
+            UserDetails(user_id=new_user.id, role_id=role.id).save()
 
             return Response({"message": "created"}, status=status.HTTP_201_CREATED)
         else:
@@ -88,13 +89,13 @@ class CarServiceAvailableSchedule(APIView):
 
         result = {}
         while date_from <= date_to:
-            schedules = service.schedules.filter(day_of_week=date_from.weekday()+1).all()
+            schedules = CarServiceSchedule.objects.filter(service_id=service.id, day_of_week=date_from.weekday()+1).all()
             available_time = list()
             result[date_from.strftime("%Y-%m-%d")] = available_time
             if schedules:
                 for sh in schedules:
                     submit_exists = False
-                    for submit in sh.submits.all():
+                    for submit in CarServiceScheduleSubmit.objects.filter(schedule_id=sh.id).all():
                         if submit.date.date() == date_from.date():
                             submit_exists = True
                             break

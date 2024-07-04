@@ -27,7 +27,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CarServiceSerializer(serializers.ModelSerializer):
-    detailer = UserSerializer()
+    detailer = serializers.SerializerMethodField()
+
+    def get_detailer(self, obj):
+        return UserSerializer(User.objects.filter(id=obj.detailer_id).first()).data
 
     class Meta:
         model = CarService
