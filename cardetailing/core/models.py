@@ -10,6 +10,8 @@ class CarService(models.Model):
     description = models.TextField()
     image = models.ImageField()
     detailer_id = models.IntegerField()
+    duration = models.IntegerField(default=0)
+    label_color = models.CharField(max_length=10, default="#6aa84f")
 
     def __str__(self):
         return f"[{self._id}] {self.name} {self.detailer_id}"

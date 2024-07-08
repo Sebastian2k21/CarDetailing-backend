@@ -88,6 +88,7 @@ class CarServiceAvailableSchedule(APIView):
         date_to = datetime.fromisoformat(date_to)
 
         result = {}
+        dates = []
         while date_from <= date_to:
             schedules = CarServiceSchedule.objects.filter(service_id=service.id, day_of_week=date_from.weekday()+1).all()
             available_time = list()
@@ -101,6 +102,14 @@ class CarServiceAvailableSchedule(APIView):
                             break
                     if not submit_exists:
                         available_time.append(str(sh.time))
+                        service_start_date = datetime(date_from.year, date_from.month, date_from.day, sh.time.hour, sh.time.minute, sh.time.second)
+                        service_end_date = service_start_date + timedelta(minutes=service.duration)
+                        dates.append({
+                            "text": service_start_date.strftime("%H:%M") + " " + service.name,
+                            "start": service_start_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                            "end": service_end_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                            "backColor": service.label_color
+                        })
 
             date_from += timedelta(days=1)
-        return Response(result, status=status.HTTP_200_OK)
+        return Response(dates, status=status.HTTP_200_OK)
