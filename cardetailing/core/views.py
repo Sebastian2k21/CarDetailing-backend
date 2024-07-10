@@ -1,12 +1,13 @@
 from bson import ObjectId
 from django.contrib.auth.models import User
 from rest_framework import status
-from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_404
+from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_404, CreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import CarService, UserDetails, Role, CarServiceScheduleSubmit, CarServiceSchedule
-from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer
+from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
+    SubmitScheduleCreateSerializer
 from .utils import is_correct_iso_date, get_dates_diff_days
 from datetime import datetime, timedelta
 
@@ -113,3 +114,7 @@ class CarServiceAvailableSchedule(APIView):
 
             date_from += timedelta(days=1)
         return Response(dates, status=status.HTTP_200_OK)
+
+
+class CarServiceSubmitSchedule(CreateAPIView):
+    serializer_class = SubmitScheduleCreateSerializer
