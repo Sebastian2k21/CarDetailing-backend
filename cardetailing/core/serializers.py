@@ -40,6 +40,3 @@ class CarServiceSerializer(serializers.ModelSerializer):
 class SubmitScheduleCreateSerializer(serializers.Serializer):
     service_id = serializers.CharField(max_length=30)
     date = serializers.DateTimeField()
-
-    def save(self, **kwargs):
-        print("OK")

@@ -5,11 +5,15 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .exceptions import ServiceException
 from .models import CarService, UserDetails, Role, CarServiceScheduleSubmit, CarServiceSchedule
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
     SubmitScheduleCreateSerializer
+from .services.car_service import CarServiceManager
 from .utils import is_correct_iso_date, get_dates_diff_days
 from datetime import datetime, timedelta
+
+car_service_manager = CarServiceManager()
 
 
 class RegisterAPIView(APIView):
@@ -26,7 +30,9 @@ class RegisterAPIView(APIView):
         if user:
             return Response({"message": "User already exists!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        role = get_object_or_404(Role, name=serialized.initial_data['role'])
+        role = Role.objects.filter(name=serialized.initial_data['role']).first()
+        if not role:
+            return Response({"message": "Role not found!"}, status=status.HTTP_400_BAD_REQUEST)
 
         if serialized.is_valid():
             new_user = User.objects.create_user(
@@ -79,7 +85,7 @@ class CarServiceAvailableSchedule(APIView):
     permission_classes = []
 
     def get(self, request, pk, date_from, date_to):
-        if not is_correct_iso_date(date_from) or not is_correct_iso_date(date_to):
+        if not is_correct_iso_date(date_from) or not is_correct_iso_date(date_to): #TODO: przeniesc do serwisu
             return Response({"message": "Invalid date format, use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
         if get_dates_diff_days(date_from, date_to) > 31:
             return Response({"message": "Date range is too large"}, status=status.HTTP_400_BAD_REQUEST)
@@ -88,12 +94,9 @@ class CarServiceAvailableSchedule(APIView):
         date_from = datetime.fromisoformat(date_from)
         date_to = datetime.fromisoformat(date_to)
 
-        result = {}
         dates = []
         while date_from <= date_to:
             schedules = CarServiceSchedule.objects.filter(service_id=service.id, day_of_week=date_from.weekday()+1).all()
-            available_time = list()
-            result[date_from.strftime("%Y-%m-%d")] = available_time
             if schedules:
                 for sh in schedules:
                     submit_exists = False
@@ -102,19 +105,43 @@ class CarServiceAvailableSchedule(APIView):
                             submit_exists = True
                             break
                     if not submit_exists:
-                        available_time.append(str(sh.time))
                         service_start_date = datetime(date_from.year, date_from.month, date_from.day, sh.time.hour, sh.time.minute, sh.time.second)
-                        service_end_date = service_start_date + timedelta(minutes=service.duration)
-                        dates.append({
-                            "text": service_start_date.strftime("%H:%M") + " " + service.name,
-                            "start": service_start_date.strftime("%Y-%m-%dT%H:%M:%S"),
-                            "end": service_end_date.strftime("%Y-%m-%dT%H:%M:%S"),
-                            "backColor": service.label_color
-                        })
+                        if service_start_date >= datetime.now():
+                            service_end_date = service_start_date + timedelta(minutes=service.duration)
+                            dates.append({
+                                "text": service_start_date.strftime("%H:%M") + " " + service.name,
+                                "start": service_start_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                                "end": service_end_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                                "backColor": service.label_color
+                            })
 
             date_from += timedelta(days=1)
         return Response(dates, status=status.HTTP_200_OK)
 
 
-class CarServiceSubmitSchedule(CreateAPIView):
-    serializer_class = SubmitScheduleCreateSerializer
+class CarServiceSubmitSchedule(APIView):
+    def post(self, request):
+        serializer = SubmitScheduleCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # service = get_object_or_404(CarService, _id=ObjectId(serializer.initial_data["service_id"]))
+        # confirmed_date = datetime.fromisoformat(serializer.initial_data["date"])
+        # if confirmed_date < datetime.now():
+        #     return Response({"message": "Date in the past is not allowed"}, status=status.HTTP_400_BAD_REQUEST)
+        #
+        # confirmed_time = confirmed_date.strftime("%H:%M:%S")
+        # schedule = CarServiceSchedule.objects.filter(service_id=service.id, time=confirmed_time).first()
+        # if not schedule:
+        #     return Response({"message": "Service time not found"}, status=status.HTTP_400_BAD_REQUEST)
+        #
+        # schedule_submit = CarServiceScheduleSubmit.objects.filter(schedule_id=schedule.id, date=confirmed_date).first()
+        # if schedule_submit:
+        #     return Response({"message": "Selected schedule is not available"}, status=status.HTTP_400_BAD_REQUEST)
+        #
+        # CarServiceScheduleSubmit(date=confirmed_date, schedule_id=schedule.id, user_id=request.user.id).save()
+        # return Response({"message": "Done"}, status=status.HTTP_200_OK)
+        try:
+            car_service_manager.submit_schedule(serializer.initial_data["service_id"], serializer.initial_data["date"], request.user.id)
+            return Response({"message": "Done"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
