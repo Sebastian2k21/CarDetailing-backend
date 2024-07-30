@@ -1,14 +1,13 @@
 from bson import ObjectId
-from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_404, CreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .exceptions import ServiceException
-from .models import CarService, UserDetails, Role
+from .models import CarService, Role, AppUser
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
-    SubmitScheduleCreateSerializer
+    SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer
 from .services.car_service import CarServiceManager
 
 
@@ -21,11 +20,11 @@ class RegisterAPIView(APIView):
 
     def post(self, request):
         serialized = UserCreateSerializer(data=request.data)
-        user = User.objects.filter(username=serialized.initial_data['username']).first()
+        user = AppUser.objects.filter(username=serialized.initial_data['username']).first()
         if user:
             return Response({"message": "User already exists!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.filter(email=serialized.initial_data['email']).first()
+        user = AppUser.objects.filter(email=serialized.initial_data['email']).first()
         if user:
             return Response({"message": "User already exists!"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -34,12 +33,12 @@ class RegisterAPIView(APIView):
             return Response({"message": "Role not found!"}, status=status.HTTP_400_BAD_REQUEST)
 
         if serialized.is_valid():
-            new_user = User.objects.create_user(
+            AppUser.objects.create_user(
                 username=serialized.initial_data['username'],
                 email=serialized.initial_data['email'],
-                password=serialized.initial_data['password']
+                password=serialized.initial_data['password'],
+                role_id=role.id
             )
-            UserDetails(user_id=new_user.id, role_id=role.id).save()
 
             return Response({"message": "created"}, status=status.HTTP_201_CREATED)
         else:
@@ -106,5 +105,25 @@ class UserSubmitsView(APIView):
     def get(self, request):
         try:
             return Response(car_service_manager.get_user_service_submits(request.user.id), status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
+
+
+class UserProfileView(APIView):
+    def get(self, request):
+        return Response(ProfileSerializer(instance=request.user).data)
+
+    def post(self, request):
+        serializer = AccountUpdateSerializer(data=request.data, instance=request.user)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Updated"}, status=status.HTTP_200_OK)
+
+
+class DeleteSubmitScheduleView(APIView):
+    def delete(self, request, submit_id: str):
+        try:
+            car_service_manager.remove_submit(request.user.id, submit_id)
+            return Response({"message": "Deleted"}, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()

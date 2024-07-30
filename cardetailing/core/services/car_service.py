@@ -63,15 +63,26 @@ class CarServiceManager:
         return dates
 
     def get_user_service_submits(self, user_id: int) -> list[dict[str, str | float]]:
-        submits = CarServiceScheduleSubmit.objects.filter(user_id=user_id).all()
+        submits = CarServiceScheduleSubmit.objects.filter(user_id=user_id, date__gt=datetime.now()).all()
         result = []
         for sub in submits:
             schedule = CarServiceSchedule.objects.filter(id=sub.schedule_id).first()
             service = CarService.objects.filter(id=schedule.service_id).first()
             result.append({
+                "service_id": str(service._id),
                 "service_name": service.name,
                 "service_price": service.price,
                 "service_image": service.image.url ,
                 "date": sub.date,
+                "submit_id": str(sub._id)
             })
         return result
+
+    def remove_submit(self, user_id: int, submit_id: str) -> None:
+        submit = CarServiceScheduleSubmit.objects.get(_id=ObjectId(submit_id))
+        if not submit:
+            raise ServiceException(message="Service submit not found", status_code=status.HTTP_400_BAD_REQUEST)
+        if user_id != submit.user_id:
+            raise  ServiceException(message="User is not authorized for this action", status_code=status.HTTP_403_FORBIDDEN)
+
+        submit.delete()

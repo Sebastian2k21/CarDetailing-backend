@@ -87,6 +87,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cardetailing.wsgi.application'
 
+AUTH_USER_MODEL = "core.AppUser"
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases

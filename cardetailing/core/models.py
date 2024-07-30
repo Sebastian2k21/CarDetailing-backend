@@ -1,5 +1,13 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from djongo import models
+
+
+class AppUser(AbstractUser):
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    street = models.CharField(max_length=50, null=True, blank=True)
+    city = models.CharField(max_length=50, null=True, blank=True)
+    zip_code = models.CharField(max_length=10, null=True, blank=True)
+    role_id = models.IntegerField()
 
 
 class CarService(models.Model):
@@ -20,12 +28,6 @@ class CarService(models.Model):
 class Role(models.Model):
     name = models.CharField(max_length=50)
     display_name = models.CharField(max_length=50)
-
-
-class UserDetails(models.Model):
-    _id = models.ObjectIdField()
-    user_id = models.IntegerField()
-    role_id = models.IntegerField()
 
 
 class CarServiceSchedule(models.Model):
