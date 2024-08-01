@@ -86,3 +86,17 @@ class CarServiceManager:
             raise  ServiceException(message="User is not authorized for this action", status_code=status.HTTP_403_FORBIDDEN)
 
         submit.delete()
+
+    def update_submit(self, user_id: int, submit_id: str, new_date: str) -> None:
+        if not is_correct_iso_date(new_date):
+            raise ServiceException(message="Invalid date format, use YYYY-MM-DD", status_code=status.HTTP_400_BAD_REQUEST)
+
+        submit = CarServiceScheduleSubmit.objects.get(_id=ObjectId(submit_id))
+        if not submit:
+            raise ServiceException(message="Service submit not found", status_code=status.HTTP_400_BAD_REQUEST)
+        if user_id != submit.user_id:
+            raise  ServiceException(message="User is not authorized for this action", status_code=status.HTTP_403_FORBIDDEN)
+
+        #TODO: dodac zabezpieczenie przed zmiana na zajety termin
+        submit.date = datetime.fromisoformat(new_date)
+        submit.save()

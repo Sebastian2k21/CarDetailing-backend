@@ -127,3 +127,13 @@ class DeleteSubmitScheduleView(APIView):
             return Response({"message": "Deleted"}, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()
+
+
+class UpdateSubmitScheduleView(APIView):
+    def post(self, request, submit_id: str):
+        date = request.data.get("date", "")
+        try:
+            car_service_manager.update_submit(request.user.id, submit_id, date)
+            return Response({"message": "Updated"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()

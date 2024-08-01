@@ -21,5 +21,6 @@ urlpatterns = [
 
     path("profile/submits", views.UserSubmitsView.as_view()),
     path("profile/submits/<submit_id>/delete", views.DeleteSubmitScheduleView.as_view()),
+    path("profile/submits/<submit_id>/change", views.UpdateSubmitScheduleView.as_view()),
     path("profile/details", views.UserProfileView.as_view()),
 ]
