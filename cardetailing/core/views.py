@@ -9,9 +9,10 @@ from .models import CarService, Role, AppUser
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
     SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer
 from .services.car_service import CarServiceManager
-
+from .services.user_service import UserManager
 
 car_service_manager = CarServiceManager()
+user_manager = UserManager()
 
 
 class RegisterAPIView(APIView):
@@ -135,5 +136,14 @@ class UpdateSubmitScheduleView(APIView):
         try:
             car_service_manager.update_submit(request.user.id, submit_id, date)
             return Response({"message": "Updated"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
+
+
+class UserRoleView(APIView):
+    def get(self, request):
+        try:
+            result = user_manager.get_role(request.user)
+            return Response(result, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()

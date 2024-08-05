@@ -10,6 +10,7 @@ from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService
 from core.utils import is_correct_iso_date, get_dates_diff_days
 
 
+
 class CarServiceManager:
     def submit_schedule(self, service_id: str, date: str, user_id: int):
         service = get_object_or_404(CarService, _id=ObjectId(service_id))

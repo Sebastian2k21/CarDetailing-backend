@@ -11,7 +11,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -92,12 +95,22 @@ AUTH_USER_MODEL = "core.AppUser"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# DATABASES = {
+#        'default': {
+#            'ENGINE': 'djongo',
+#            'NAME': 'ProDetailing_Database',
+#        }
+#    }
+
 DATABASES = {
-       'default': {
-           'ENGINE': 'djongo',
-           'NAME': 'ProDetailing_Database',
-       }
-   }
+        'default': {
+            'ENGINE': 'djongo',
+            'NAME': os.environ.get("DB_NAME"),
+            'CLIENT': {
+                'host': os.environ.get("DB_HOST"),
+            }
+        }
+}
 
 
 # Password validation
