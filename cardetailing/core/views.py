@@ -147,3 +147,10 @@ class UserRoleView(APIView):
             return Response(result, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()
+
+
+class DetailerServicesListView(ListAPIView):
+    serializer_class = CarServiceSerializer
+
+    def get_queryset(self):
+        return CarService.objects.filter(detailer_id=self.request.user.id)
