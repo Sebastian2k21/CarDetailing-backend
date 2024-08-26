@@ -1,14 +1,18 @@
 from datetime import datetime, timedelta
+from typing import Any
 
 from bson import ObjectId
+from django.core.files.base import ContentFile
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
+import base64
+import uuid
+
 
 from core.exceptions import ServiceException
-from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService
+from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService, Role
 
 from core.utils import is_correct_iso_date, get_dates_diff_days
-
 
 
 class CarServiceManager:
@@ -101,3 +105,29 @@ class CarServiceManager:
         #TODO: dodac zabezpieczenie przed zmiana na zajety termin
         submit.date = datetime.fromisoformat(new_date)
         submit.save()
+
+    def add_service(self, user_id: int, user_role_id: int, service_data: dict[str, Any]):
+        detailer_role = Role.objects.filter(name="detailer").first()
+        if not detailer_role:
+            raise ServiceException(message="Detailer role not found, db error",
+                                   status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        if detailer_role.id != user_role_id:
+            raise ServiceException(message="User has invalid role to add service", status_code=status.HTTP_400_BAD_REQUEST)
+
+        format, imgstr = service_data["image_file"].split(';base64,')
+        ext = format.split('/')[-1]
+
+        image = ContentFile(base64.b64decode(imgstr), name=f'{uuid.uuid4()}.' + ext)
+
+        car_service = CarService(name=service_data["name"],
+                                 description=service_data["description"],
+                                 duration=service_data["duration"],
+                                 price=service_data["price"],
+                                 image=image,
+                                 detailer_id=user_id)
+        car_service.save()
+
+        if "service_days" in service_data:
+            for d in service_data["service_days"]:
+                CarServiceSchedule(service_id=car_service.id, day_of_week=d["day"], time=d["time"]).save()

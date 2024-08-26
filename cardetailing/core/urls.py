@@ -26,4 +26,5 @@ urlpatterns = [
     path("profile/role", views.UserRoleView.as_view()),
 
     path("detailer/services", views.DetailerServicesListView.as_view()),
+    path("detailer/services/add", views.AddServiceView.as_view()),
 ]

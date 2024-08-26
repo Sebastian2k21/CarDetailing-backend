@@ -154,3 +154,12 @@ class DetailerServicesListView(ListAPIView):
 
     def get_queryset(self):
         return CarService.objects.filter(detailer_id=self.request.user.id)
+
+
+class AddServiceView(APIView):
+    def post(self, request):
+        try:
+            car_service_manager.add_service(request.user.id, request.user.role_id, request.data)
+            return Response({"message": "Added"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
