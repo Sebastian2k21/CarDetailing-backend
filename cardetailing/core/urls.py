@@ -16,6 +16,7 @@ urlpatterns = [
 
     path('services', views.CarServiceListView.as_view()),
     path('services/<pk>/details', views.CarServiceDetailsView.as_view()),
+    path('services/<pk>/days', views.CarServiceDaysView.as_view()),
     path('services/<pk>/available/<date_from>/<date_to>', views.CarServiceAvailableScheduleView.as_view()),
     path('services/schedule', views.CarServiceSubmitScheduleView.as_view()),
 

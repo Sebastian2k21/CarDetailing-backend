@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import CarService, AppUser
+from .models import CarService, AppUser, CarServiceSchedule
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -33,6 +33,12 @@ class CarServiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CarService
+        fields = "__all__"
+
+
+class CarServiceScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CarServiceSchedule
         fields = "__all__"
 
 

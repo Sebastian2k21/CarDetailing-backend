@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .exceptions import ServiceException
-from .models import CarService, Role, AppUser
+from .models import CarService, Role, AppUser, CarServiceSchedule
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
-    SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer
+    SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer, CarServiceScheduleSerializer
 from .services.car_service import CarServiceManager
 from .services.user_service import UserManager
 
@@ -77,6 +77,16 @@ class CarServiceDetailsView(RetrieveAPIView):
 
     def get_object(self):
         return CarService.objects.filter(_id=ObjectId(self.kwargs["pk"])).first()
+
+
+class CarServiceDaysView(ListAPIView):
+    serializer_class = CarServiceScheduleSerializer
+    authentication_classes = []
+    permission_classes = []
+
+    def get_queryset(self):
+        service = get_object_or_404(CarService, _id=ObjectId(self.kwargs["pk"]))
+        return CarServiceSchedule.objects.filter(service_id=service.id)
 
 
 class CarServiceAvailableScheduleView(APIView):
