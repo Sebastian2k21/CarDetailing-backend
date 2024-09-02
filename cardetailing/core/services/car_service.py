@@ -8,7 +8,6 @@ from rest_framework.generics import get_object_or_404
 import base64
 import uuid
 
-
 from core.exceptions import ServiceException
 from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService, Role
 
@@ -29,13 +28,15 @@ class CarServiceManager:
 
         schedule_submit = CarServiceScheduleSubmit.objects.filter(schedule_id=schedule.id, date=confirmed_date).first()
         if schedule_submit:
-            raise ServiceException(message="Selected schedule is not available", status_code=status.HTTP_400_BAD_REQUEST)
+            raise ServiceException(message="Selected schedule is not available",
+                                   status_code=status.HTTP_400_BAD_REQUEST)
 
         CarServiceScheduleSubmit(date=confirmed_date, schedule_id=schedule.id, user_id=user_id).save()
 
     def get_available_schedules(self, service_id: str, date_from: str, date_to: str) -> list[dict[str, str]]:
         if not is_correct_iso_date(date_from) or not is_correct_iso_date(date_to):
-            raise ServiceException(message="Invalid date format, use YYYY-MM-DD", status_code=status.HTTP_400_BAD_REQUEST)
+            raise ServiceException(message="Invalid date format, use YYYY-MM-DD",
+                                   status_code=status.HTTP_400_BAD_REQUEST)
         if get_dates_diff_days(date_from, date_to) > 31:
             raise ServiceException(message="Date range is too large", status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -45,7 +46,8 @@ class CarServiceManager:
 
         dates = []
         while date_from <= date_to:
-            schedules = CarServiceSchedule.objects.filter(service_id=service.id, day_of_week=date_from.weekday()+1).all()
+            schedules = CarServiceSchedule.objects.filter(service_id=service.id,
+                                                          day_of_week=date_from.weekday() + 1).all()
             if schedules:
                 for sh in schedules:
                     submit_exists = False
@@ -54,7 +56,8 @@ class CarServiceManager:
                             submit_exists = True
                             break
                     if not submit_exists:
-                        service_start_date = datetime(date_from.year, date_from.month, date_from.day, sh.time.hour, sh.time.minute, sh.time.second)
+                        service_start_date = datetime(date_from.year, date_from.month, date_from.day, sh.time.hour,
+                                                      sh.time.minute, sh.time.second)
                         if service_start_date >= datetime.now():
                             service_end_date = service_start_date + timedelta(minutes=service.duration)
                             dates.append({
@@ -77,7 +80,7 @@ class CarServiceManager:
                 "service_id": str(service._id),
                 "service_name": service.name,
                 "service_price": service.price,
-                "service_image": service.image.url ,
+                "service_image": service.image.url,
                 "date": sub.date,
                 "submit_id": str(sub._id)
             })
@@ -88,22 +91,30 @@ class CarServiceManager:
         if not submit:
             raise ServiceException(message="Service submit not found", status_code=status.HTTP_400_BAD_REQUEST)
         if user_id != submit.user_id:
-            raise  ServiceException(message="User is not authorized for this action", status_code=status.HTTP_403_FORBIDDEN)
+            raise ServiceException(message="User is not authorized for this action",
+                                   status_code=status.HTTP_403_FORBIDDEN)
 
         submit.delete()
 
     def update_submit(self, user_id: int, submit_id: str, new_date: str) -> None:
         if not is_correct_iso_date(new_date):
-            raise ServiceException(message="Invalid date format, use YYYY-MM-DD", status_code=status.HTTP_400_BAD_REQUEST)
+            raise ServiceException(message="Invalid date format, use YYYY-MM-DD",
+                                   status_code=status.HTTP_400_BAD_REQUEST)
 
         submit = CarServiceScheduleSubmit.objects.get(_id=ObjectId(submit_id))
         if not submit:
             raise ServiceException(message="Service submit not found", status_code=status.HTTP_400_BAD_REQUEST)
         if user_id != submit.user_id:
-            raise  ServiceException(message="User is not authorized for this action", status_code=status.HTTP_403_FORBIDDEN)
+            raise ServiceException(message="User is not authorized for this action",
+                                   status_code=status.HTTP_403_FORBIDDEN)
 
-        #TODO: dodac zabezpieczenie przed zmiana na zajety termin
-        submit.date = datetime.fromisoformat(new_date)
+        new_date = datetime.fromisoformat(new_date)
+        exists_submit = CarServiceScheduleSubmit.objects.filter(date=new_date, schedule_id=submit.schedule_id).first()
+        if exists_submit:
+            raise ServiceException(message="Schedule is not available",
+                                   status_code=status.HTTP_403_FORBIDDEN)
+
+        submit.date = new_date
         submit.save()
 
     def add_service(self, user_id: int, user_role_id: int, service_data: dict[str, Any]):
@@ -113,7 +124,8 @@ class CarServiceManager:
                                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         if detailer_role.id != user_role_id:
-            raise ServiceException(message="User has invalid role to add service", status_code=status.HTTP_400_BAD_REQUEST)
+            raise ServiceException(message="User has invalid role to add service",
+                                   status_code=status.HTTP_400_BAD_REQUEST)
 
         format, imgstr = service_data["image_file"].split(';base64,')
         ext = format.split('/')[-1]
