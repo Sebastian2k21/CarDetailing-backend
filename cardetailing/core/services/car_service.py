@@ -13,6 +13,8 @@ from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService
 
 from core.utils import is_correct_iso_date, get_dates_diff_days
 
+from core.models import Car
+
 
 class CarServiceManager:
     def submit_schedule(self, service_id: str, date: str, user_id: int):
@@ -143,3 +145,7 @@ class CarServiceManager:
         if "service_days" in service_data:
             for d in service_data["service_days"]:
                 CarServiceSchedule(service_id=car_service.id, day_of_week=d["day"], time=d["time"]).save()
+
+    def add_car(self, user_id: int, manufacturer: str, model: str, year_of_production: int):
+        car = Car(user_id=user_id, manufacturer=manufacturer, model=model, year_of_production=year_of_production)
+        car.save()

@@ -5,9 +5,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .exceptions import ServiceException
-from .models import CarService, Role, AppUser, CarServiceSchedule
+from .models import CarService, Role, AppUser, CarServiceSchedule, Car
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
-    SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer, CarServiceScheduleSerializer
+    SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer, CarServiceScheduleSerializer, \
+    CarSerializer
 from .services.car_service import CarServiceManager
 from .services.user_service import UserManager
 
@@ -167,9 +168,26 @@ class DetailerServicesListView(ListAPIView):
 
 
 class AddServiceView(APIView):
+
     def post(self, request):
         try:
             car_service_manager.add_service(request.user.id, request.user.role_id, request.data)
             return Response({"message": "Added"}, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()
+
+
+class CarsView(ListAPIView):
+    serializer_class = CarSerializer
+
+    def get_queryset(self):
+        return Car.objects.filter(user_id=self.request.user.id)
+
+
+class AddCarView(APIView):
+    def post(self, request):
+        serializer = CarSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data["user_id"] = request.user.id
+        serializer.save()
+        return Response({"message": "Done"}, status=status.HTTP_200_OK)

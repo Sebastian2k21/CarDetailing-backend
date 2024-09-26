@@ -50,3 +50,12 @@ class CarServiceScheduleSubmit(models.Model):
     date = models.DateTimeField()
     schedule_id = models.IntegerField()
     user_id = models.IntegerField()
+
+
+class Car(models.Model):
+    id = models.IntegerField()
+    _id = models.ObjectIdField()
+    manufacturer = models.CharField(max_length=50)
+    model = models.CharField(max_length=50)
+    year_of_production = models.IntegerField()
+    user_id = models.IntegerField()

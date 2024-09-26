@@ -28,4 +28,7 @@ urlpatterns = [
 
     path("detailer/services", views.DetailerServicesListView.as_view()),
     path("detailer/services/add", views.AddServiceView.as_view()),
+
+    path("cars", views.CarsView.as_view()),
+    path("cars/add", views.AddCarView.as_view())
 ]
