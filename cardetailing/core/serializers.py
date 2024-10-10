@@ -62,4 +62,10 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
+        fields = ["_id", "manufacturer", "model", "year_of_production"]
+
+
+class CarAddSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Car
         fields = ["manufacturer", "model", "year_of_production"]

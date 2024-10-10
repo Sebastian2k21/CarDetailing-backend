@@ -8,7 +8,7 @@ from .exceptions import ServiceException
 from .models import CarService, Role, AppUser, CarServiceSchedule, Car
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
     SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer, CarServiceScheduleSerializer, \
-    CarSerializer
+    CarSerializer, CarAddSerializer
 from .services.car_service import CarServiceManager
 from .services.user_service import UserManager
 
@@ -39,7 +39,7 @@ class RegisterAPIView(APIView):
                 username=serialized.initial_data['username'],
                 email=serialized.initial_data['email'],
                 password=serialized.initial_data['password'],
-                role_id=role.id
+                role_id=role._id
             )
 
             return Response({"message": "created"}, status=status.HTTP_201_CREATED)
@@ -107,7 +107,10 @@ class CarServiceSubmitScheduleView(APIView):
         serializer.is_valid(raise_exception=True)
 
         try:
-            car_service_manager.submit_schedule(serializer.initial_data["service_id"], serializer.initial_data["date"], request.user.id)
+            car_service_manager.submit_schedule(serializer.initial_data["service_id"],
+                                                serializer.initial_data["date"],
+                                                request.user.id,
+                                                serializer.initial_data["car_id"])
             return Response({"message": "Done"}, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()
@@ -144,8 +147,9 @@ class DeleteSubmitScheduleView(APIView):
 class UpdateSubmitScheduleView(APIView):
     def post(self, request, submit_id: str):
         date = request.data.get("date", "")
+        car_id = request.data.get("car_id", None)
         try:
-            car_service_manager.update_submit(request.user.id, submit_id, date)
+            car_service_manager.update_submit(request.user.id, submit_id, date, car_id)
             return Response({"message": "Updated"}, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()
@@ -181,13 +185,31 @@ class CarsView(ListAPIView):
     serializer_class = CarSerializer
 
     def get_queryset(self):
-        return Car.objects.filter(user_id=self.request.user.id)
+        return Car.objects.filter(user_id=self.request.user.id, is_removed=0)
 
 
 class AddCarView(APIView):
     def post(self, request):
-        serializer = CarSerializer(data=request.data)
+        serializer = CarAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.validated_data["user_id"] = request.user.id
         serializer.save()
         return Response({"message": "Done"}, status=status.HTTP_200_OK)
+
+
+class RemoveCarView(APIView):
+    def delete(self, request, car_id):
+        try:
+            car_service_manager.remove_car(request.user.id, car_id)
+            return Response({"message": "Removed"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
+
+
+class OrdersListView(APIView):
+    def get(self, request):
+        try:
+            result = car_service_manager.get_all_orders(self.request.user.id)
+            return Response(result, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
