@@ -5,10 +5,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .exceptions import ServiceException
-from .models import CarService, Role, AppUser, CarServiceSchedule, Car
+from .models import CarService, Role, AppUser, CarServiceSchedule, Car, Employee
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
     SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer, CarServiceScheduleSerializer, \
-    CarSerializer, CarAddSerializer
+    CarSerializer, CarAddSerializer, EmployeeAddSerializer, EmployeeSerializer
 from .services.car_service import CarServiceManager
 from .services.user_service import UserManager
 
@@ -188,11 +188,27 @@ class CarsView(ListAPIView):
         return Car.objects.filter(user_id=self.request.user.id, is_removed=0)
 
 
+class EmployeesView(ListAPIView):
+    serializer_class = EmployeeSerializer
+
+    def get_queryset(self):
+        return Employee.objects.filter(detailer_id=self.request.user.id, is_removed=0)
+
+
 class AddCarView(APIView):
     def post(self, request):
         serializer = CarAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.validated_data["user_id"] = request.user.id
+        serializer.save()
+        return Response({"message": "Done"}, status=status.HTTP_200_OK)
+
+
+class AddEmployeeView(APIView):
+    def post(self, request):
+        serializer = EmployeeAddSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data["detailer_id"] = request.user.id
         serializer.save()
         return Response({"message": "Done"}, status=status.HTTP_200_OK)
 

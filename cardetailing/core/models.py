@@ -69,3 +69,15 @@ class SubmitStatus(models.Model):
     id = models.IntegerField()
     _id = models.ObjectIdField()
     name = models.CharField(max_length=50)
+
+
+class Employee(models.Model):
+    id = models.IntegerField()
+    _id = models.ObjectIdField()
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    description = models.CharField(max_length=150)
+    experience = models.IntegerField()
+    detailer_id = models.CharField(max_length=100)
+    is_removed = models.IntegerField(default=0)
+

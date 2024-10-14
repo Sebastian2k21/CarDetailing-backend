@@ -18,6 +18,10 @@ from core.models import Car
 
 class CarServiceManager:
     def submit_schedule(self, service_id: str, date: str, user_id: int, car_id: int):
+        pending_status = SubmitStatus.objects.filter(name="pending").first()
+        if not pending_status:
+            raise ServiceException(message="Pending status not exists", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         car_id = ObjectId(car_id)
         service = get_object_or_404(CarService, _id=ObjectId(service_id))
         confirmed_date = datetime.fromisoformat(date)
@@ -38,7 +42,11 @@ class CarServiceManager:
         if not car:
             raise ServiceException(message="Car not found", status_code=status.HTTP_400_BAD_REQUEST)
 
-        CarServiceScheduleSubmit(date=confirmed_date, schedule_id=schedule._id, user_id=user_id, car_id=car_id).save()
+        CarServiceScheduleSubmit(date=confirmed_date,
+                                 schedule_id=schedule._id,
+                                 user_id=user_id,
+                                 car_id=car_id,
+                                 status_id=pending_status._id).save()
 
     def get_available_schedules(self, service_id: str, date_from: str, date_to: str) -> list[dict[str, str]]:
         service_id = ObjectId(service_id)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import CarService, AppUser, CarServiceSchedule, Car
+from .models import CarService, AppUser, CarServiceSchedule, Car, Employee
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -69,3 +69,15 @@ class CarAddSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
         fields = ["manufacturer", "model", "year_of_production"]
+
+
+class EmployeeAddSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ["first_name", "last_name", "description", "experience"]
+
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ["_id", "first_name", "last_name", "description", "experience"]

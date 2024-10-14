@@ -32,5 +32,9 @@ urlpatterns = [
 
     path("cars", views.CarsView.as_view()),
     path("cars/add", views.AddCarView.as_view()),
-    path("cars/<car_id>/delete", views.RemoveCarView.as_view())
+    path("cars/<car_id>/delete", views.RemoveCarView.as_view()),
+
+    path("employees", views.EmployeesView.as_view()),
+    path("employees/add", views.AddEmployeeView.as_view()),
+    # path("employee/<employee_id>/delete", views.RemoveEmployeeView.as_view()),
 ]
