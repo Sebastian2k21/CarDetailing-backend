@@ -9,7 +9,7 @@ import base64
 import uuid
 
 from core.exceptions import ServiceException
-from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService, Role, AppUser, SubmitStatus
+from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService, Role, AppUser, SubmitStatus, Employee
 
 from core.utils import is_correct_iso_date, get_dates_diff_days
 
@@ -17,6 +17,13 @@ from core.models import Car
 
 
 class CarServiceManager:
+    def get_or_error(self, model_class, object_id: str):
+        result = model_class.objects.filter(_id=ObjectId(object_id)).first()
+        if not result:
+            raise ServiceException(message=f"Object of {model_class} not found",
+                                   status_code=status.HTTP_400_BAD_REQUEST)
+        return result
+
     def submit_schedule(self, service_id: str, date: str, user_id: int, car_id: int):
         pending_status = SubmitStatus.objects.filter(name="pending").first()
         if not pending_status:
@@ -220,6 +227,27 @@ class CarServiceManager:
                 "service_id": str(service._id),
                 "service_price": service.price,
                 "due_date": submit.date.strftime("%Y-%m-%d %H:%M"),
-                "status": status.name
+                "status": status.name,
+                "employee_id": submit.employee_id
             })
         return result
+
+    def remove_employee(self, user_id: int, employee_id: str):
+        employee = Employee.objects.filter(_id=ObjectId(employee_id), detailer_id=str(user_id)).first()
+        if not employee:
+            raise ServiceException(message="Employee not found",
+                                   status_code=status.HTTP_400_BAD_REQUEST)
+        employee.is_removed = True
+        employee.save()
+
+    def attach_employee(self, user_id: int, submit_id: str, employee_id: str):
+        submit = self.get_or_error(CarServiceScheduleSubmit, submit_id)
+        schedule = self.get_or_error(CarServiceSchedule, submit.schedule_id)
+        service = self.get_or_error(CarService, schedule.service_id)
+
+        if service.detailer_id != str(user_id):
+            raise ServiceException(message="User has not permission to do this action", status_code=status.HTTP_403_FORBIDDEN)
+
+        self.get_or_error(Employee, employee_id)
+        submit.employee_id = employee_id
+        submit.save()

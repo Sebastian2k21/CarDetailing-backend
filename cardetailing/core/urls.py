@@ -29,6 +29,7 @@ urlpatterns = [
     path("detailer/services", views.DetailerServicesListView.as_view()),
     path("detailer/services/add", views.AddServiceView.as_view()),
     path("detailer/orders", views.OrdersListView.as_view()),
+    path("detailer/orders/<order_id>/attach-employee", views.AttachEmployeeView.as_view()),
 
     path("cars", views.CarsView.as_view()),
     path("cars/add", views.AddCarView.as_view()),
@@ -36,5 +37,7 @@ urlpatterns = [
 
     path("employees", views.EmployeesView.as_view()),
     path("employees/add", views.AddEmployeeView.as_view()),
-    # path("employee/<employee_id>/delete", views.RemoveEmployeeView.as_view()),
+    path("employees/<employee_id>/delete", views.RemoveEmployeeView.as_view()),
+
+    path("status", views.SubmitStatusListView.as_view()),
 ]

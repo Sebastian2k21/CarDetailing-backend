@@ -1,14 +1,16 @@
 from bson import ObjectId
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView, get_object_or_404, CreateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .exceptions import ServiceException
-from .models import CarService, Role, AppUser, CarServiceSchedule, Car, Employee
+from .models import CarService, Role, AppUser, CarServiceSchedule, Car, Employee, SubmitStatus
+from .permissions import IsDetailer, IsClient
 from .serializers import UserCreateSerializer, ChangePasswordSerializer, CarServiceSerializer, \
     SubmitScheduleCreateSerializer, ProfileSerializer, AccountUpdateSerializer, CarServiceScheduleSerializer, \
-    CarSerializer, CarAddSerializer, EmployeeAddSerializer, EmployeeSerializer
+    CarSerializer, CarAddSerializer, EmployeeAddSerializer, EmployeeSerializer, SubmitStatusSerializer
 from .services.car_service import CarServiceManager
 from .services.user_service import UserManager
 
@@ -172,6 +174,7 @@ class DetailerServicesListView(ListAPIView):
 
 
 class AddServiceView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
 
     def post(self, request):
         try:
@@ -182,6 +185,7 @@ class AddServiceView(APIView):
 
 
 class CarsView(ListAPIView):
+    permission_classes = [IsAuthenticated, IsClient]
     serializer_class = CarSerializer
 
     def get_queryset(self):
@@ -189,6 +193,7 @@ class CarsView(ListAPIView):
 
 
 class EmployeesView(ListAPIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
     serializer_class = EmployeeSerializer
 
     def get_queryset(self):
@@ -196,6 +201,8 @@ class EmployeesView(ListAPIView):
 
 
 class AddCarView(APIView):
+    permission_classes = [IsAuthenticated, IsClient]
+
     def post(self, request):
         serializer = CarAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -205,6 +212,8 @@ class AddCarView(APIView):
 
 
 class AddEmployeeView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+
     def post(self, request):
         serializer = EmployeeAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -214,6 +223,8 @@ class AddEmployeeView(APIView):
 
 
 class RemoveCarView(APIView):
+    permission_classes = [IsAuthenticated, IsClient]
+
     def delete(self, request, car_id):
         try:
             car_service_manager.remove_car(request.user.id, car_id)
@@ -222,10 +233,40 @@ class RemoveCarView(APIView):
             return e.get_response()
 
 
+class RemoveEmployeeView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+
+    def delete(self, request, employee_id):
+        try:
+            car_service_manager.remove_employee(request.user.id, employee_id)
+            return Response({"message": "Removed"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
+
+
 class OrdersListView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+
     def get(self, request):
         try:
             result = car_service_manager.get_all_orders(self.request.user.id)
             return Response(result, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()
+
+
+class AttachEmployeeView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+
+    def post(self, request, order_id):
+        try:
+            car_service_manager.attach_employee(request.user.id, order_id, request.data["employee_id"])
+            return Response({"message": "Attached"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
+
+
+class SubmitStatusListView(ListAPIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+    queryset = SubmitStatus.objects.all()
+    serializer_class = SubmitStatusSerializer

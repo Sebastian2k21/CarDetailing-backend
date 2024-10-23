@@ -52,7 +52,8 @@ class CarServiceScheduleSubmit(models.Model):
     schedule_id = models.CharField(max_length=100)
     user_id = models.CharField(max_length=100)
     car_id = models.CharField(max_length=100)
-    status_id = models.CharField(max_length=100, null=True, blank=True) #TODO: przy nowej bazie i migracjach wyrzucic null i blank
+    status_id = models.CharField(max_length=100, null=True, blank=True)
+    employee_id = models.CharField(max_length=100, null=True, blank=True)
 
 
 class Car(models.Model):
