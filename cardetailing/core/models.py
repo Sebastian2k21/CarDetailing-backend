@@ -10,6 +10,10 @@ class AppUser(AbstractUser):
     role_id = models.CharField(max_length=100)
 
 
+# class Company(models.Model):
+
+
+
 class CarService(models.Model):
     id = models.IntegerField()
     _id = models.ObjectIdField()
@@ -51,9 +55,10 @@ class CarServiceScheduleSubmit(models.Model):
     date = models.DateTimeField()
     schedule_id = models.CharField(max_length=100)
     user_id = models.CharField(max_length=100)
+    service_id = models.CharField(max_length=100)
     car_id = models.CharField(max_length=100)
     status_id = models.CharField(max_length=100, null=True, blank=True)
-    employee_id = models.CharField(max_length=100, null=True, blank=True)
+    employee_id = models.CharField(max_length=100, null=True, blank=True    )
 
 
 class Car(models.Model):

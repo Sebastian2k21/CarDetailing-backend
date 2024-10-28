@@ -270,3 +270,14 @@ class SubmitStatusListView(ListAPIView):
     permission_classes = [IsAuthenticated, IsDetailer]
     queryset = SubmitStatus.objects.all()
     serializer_class = SubmitStatusSerializer
+
+
+class SetSubmitStatusView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+
+    def post(self, request, order_id):
+        try:
+            car_service_manager.set_submit_status(request.user.id, order_id, request.data["status_id"])
+            return Response({"message": "Status set"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()

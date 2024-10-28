@@ -53,6 +53,7 @@ class CarServiceManager:
                                  schedule_id=schedule._id,
                                  user_id=user_id,
                                  car_id=car_id,
+                                 service_id=service_id,
                                  status_id=pending_status._id).save()
 
     def get_available_schedules(self, service_id: str, date_from: str, date_to: str) -> list[dict[str, str]]:
@@ -196,6 +197,8 @@ class CarServiceManager:
         submits = CarServiceScheduleSubmit.objects.filter(schedule_id__in=schedule_ids)
         clients = {}
         cars = {}
+        schedules = {}
+        services = {}
         result = []
         statuses = SubmitStatus.objects.all()
 
@@ -212,8 +215,17 @@ class CarServiceManager:
                 car = Car.objects.filter(_id=ObjectId(submit.car_id)).first()
                 cars[submit.car_id] = car
 
-            schedule = schedules.filter(_id=ObjectId(submit.schedule_id)).first()
-            service = services.filter(_id=ObjectId(schedule.service_id)).first()
+            if submit.schedule_id in schedules:
+                schedule = schedules[submit.schedule_id]
+            else:
+                schedule = CarServiceSchedule.objects.filter(_id=ObjectId(submit.schedule_id)).first()
+                schedules[submit.schedule_id] = schedule
+
+            if schedule.service_id in services:
+                service = services[schedule.service_id]
+            else:
+                service = CarService.objects.filter(_id=ObjectId(schedule.service_id)).first()
+                services[schedule.service_id] = service
 
             status = statuses.filter(_id=ObjectId(submit.status_id)).first()
 
@@ -227,7 +239,7 @@ class CarServiceManager:
                 "service_id": str(service._id),
                 "service_price": service.price,
                 "due_date": submit.date.strftime("%Y-%m-%d %H:%M"),
-                "status": status.name,
+                "status_id": str(status._id),
                 "employee_id": submit.employee_id
             })
         return result
@@ -250,4 +262,17 @@ class CarServiceManager:
 
         self.get_or_error(Employee, employee_id)
         submit.employee_id = employee_id
+        submit.save()
+
+    def set_submit_status(self, user_id: int, submit_id: str, status_id: str):
+        submit = self.get_or_error(CarServiceScheduleSubmit, submit_id)
+        schedule = self.get_or_error(CarServiceSchedule, submit.schedule_id)
+        service = self.get_or_error(CarService, schedule.service_id)
+
+        if service.detailer_id != str(user_id):
+            raise ServiceException(message="User has not permission to do this action", status_code=status.HTTP_403_FORBIDDEN)
+
+        self.get_or_error(SubmitStatus, status_id)
+
+        submit.status_id = status_id
         submit.save()

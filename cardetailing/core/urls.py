@@ -30,6 +30,7 @@ urlpatterns = [
     path("detailer/services/add", views.AddServiceView.as_view()),
     path("detailer/orders", views.OrdersListView.as_view()),
     path("detailer/orders/<order_id>/attach-employee", views.AttachEmployeeView.as_view()),
+    path("detailer/orders/<order_id>/set-status", views.SetSubmitStatusView.as_view()),
 
     path("cars", views.CarsView.as_view()),
     path("cars/add", views.AddCarView.as_view()),
