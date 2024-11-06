@@ -17,8 +17,14 @@ from core.models import Car
 
 
 class CarServiceManager:
-    def get_or_error(self, model_class, object_id: str):
-        result = model_class.objects.filter(_id=ObjectId(object_id)).first()
+    def get_or_error(self, model_class, object_id: str = None, **kwargs):
+        result = model_class.objects
+        if object_id:
+            result = result.filter(_id=ObjectId(object_id))
+        if kwargs:
+            result = result.filter(**kwargs)
+
+        result = result.first()
         if not result:
             raise ServiceException(message=f"Object of {model_class} not found",
                                    status_code=status.HTTP_400_BAD_REQUEST)
@@ -27,7 +33,8 @@ class CarServiceManager:
     def submit_schedule(self, service_id: str, date: str, user_id: int, car_id: int):
         pending_status = SubmitStatus.objects.filter(name="pending").first()
         if not pending_status:
-            raise ServiceException(message="Pending status not exists", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise ServiceException(message="Pending status not exists",
+                                   status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         car_id = ObjectId(car_id)
         service = get_object_or_404(CarService, _id=ObjectId(service_id))
@@ -258,7 +265,8 @@ class CarServiceManager:
         service = self.get_or_error(CarService, schedule.service_id)
 
         if service.detailer_id != str(user_id):
-            raise ServiceException(message="User has not permission to do this action", status_code=status.HTTP_403_FORBIDDEN)
+            raise ServiceException(message="User has not permission to do this action",
+                                   status_code=status.HTTP_403_FORBIDDEN)
 
         self.get_or_error(Employee, employee_id)
         submit.employee_id = employee_id
@@ -270,9 +278,25 @@ class CarServiceManager:
         service = self.get_or_error(CarService, schedule.service_id)
 
         if service.detailer_id != str(user_id):
-            raise ServiceException(message="User has not permission to do this action", status_code=status.HTTP_403_FORBIDDEN)
+            raise ServiceException(message="User has not permission to do this action",
+                                   status_code=status.HTTP_403_FORBIDDEN)
 
         self.get_or_error(SubmitStatus, status_id)
 
         submit.status_id = status_id
         submit.save()
+
+    def get_detailer_stats(self, detailer_id: int):
+        orders = self.get_all_orders(detailer_id)
+        pending_status_id = str(self.get_or_error(SubmitStatus, name="pending")._id)
+        in_progress_status_id = str(self.get_or_error(SubmitStatus, name="in progress")._id)
+        done_status_id = str(self.get_or_error(SubmitStatus, name="done")._id)
+
+        def count_status(status_id: str):
+            return len([o for o in orders if o["status_id"] == status_id])
+
+        return {
+            "pending_count": count_status(pending_status_id),
+            "in_progress_count": count_status(in_progress_status_id),
+            "done_count": count_status(done_status_id),
+        }

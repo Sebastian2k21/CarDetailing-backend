@@ -48,15 +48,18 @@ class SubmitScheduleCreateSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    # company_name = serializers.CharField(max_length=200, required=False)
+    # nip = serializers.CharField(max_length=11, required=False)
+
     class Meta:
         model = AppUser
-        fields = ["id", "username", "email", "first_name", "last_name", "phone", "street", "city", "zip_code"]
+        fields = ["id", "username", "email", "first_name", "last_name", "phone", "street", "city", "zip_code", "nip", "company_name"]
 
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppUser
-        fields = ["email", "first_name", "last_name",  "phone", "street", "city", "zip_code"]
+        fields = ["email", "first_name", "last_name",  "phone", "street", "city", "zip_code", "nip", "company_name"]
 
 
 class CarSerializer(serializers.ModelSerializer):

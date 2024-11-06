@@ -8,10 +8,8 @@ class AppUser(AbstractUser):
     city = models.CharField(max_length=50, null=True, blank=True)
     zip_code = models.CharField(max_length=10, null=True, blank=True)
     role_id = models.CharField(max_length=100)
-
-
-# class Company(models.Model):
-
+    nip = models.CharField(max_length=11, null=True, blank=True)
+    company_name = models.CharField(max_length=200, null=True, blank=True)
 
 
 class CarService(models.Model):
