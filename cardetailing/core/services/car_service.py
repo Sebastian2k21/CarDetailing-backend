@@ -195,60 +195,44 @@ class CarServiceManager:
         car.save()
 
     def get_all_orders(self, detailer_id: int):
-        services = CarService.objects.filter(detailer_id=detailer_id)
-        service_ids = [str(id) for id in services.values_list('_id', flat=True)]
+        services = list(CarService.objects.filter(detailer_id=detailer_id))
+        service_map = {str(service._id): service for service in services}
 
-        schedules = CarServiceSchedule.objects.filter(service_id__in=service_ids)
-        schedule_ids = [str(id) for id in schedules.values_list('_id', flat=True)]
+        schedules = list(CarServiceSchedule.objects.filter(service_id__in=service_map.keys()))
+        schedule_map = {str(schedule._id): schedule for schedule in schedules}
 
-        submits = CarServiceScheduleSubmit.objects.filter(schedule_id__in=schedule_ids)
-        clients = {}
-        cars = {}
-        schedules = {}
-        services = {}
+        submits = list(CarServiceScheduleSubmit.objects.filter(schedule_id__in=schedule_map.keys()))
+
+        user_ids = {submit.user_id for submit in submits}
+        car_ids = {ObjectId(submit.car_id) for submit in submits}
+        status_ids = {ObjectId(submit.status_id) for submit in submits}
+
+        users = {user.id: user for user in AppUser.objects.filter(id__in=user_ids)}
+        cars = {str(car._id): car for car in Car.objects.filter(_id__in=car_ids)}
+        statuses = {str(status._id): status for status in SubmitStatus.objects.filter(_id__in=status_ids)}
+
         result = []
-        statuses = SubmitStatus.objects.all()
-
         for submit in submits:
-            if submit.user_id in clients:
-                client = clients[submit.user_id]
-            else:
-                client = AppUser.objects.filter(id=submit.user_id).first()
-                clients[submit.user_id] = client
+            client = users.get(int(submit.user_id))
+            car = cars.get(submit.car_id)
+            schedule = schedule_map.get(submit.schedule_id)
+            service = service_map.get(schedule.service_id) if schedule else None
+            status = statuses.get(submit.status_id)
 
-            if submit.car_id in cars:
-                car = cars[submit.car_id]
-            else:
-                car = Car.objects.filter(_id=ObjectId(submit.car_id)).first()
-                cars[submit.car_id] = car
-
-            if submit.schedule_id in schedules:
-                schedule = schedules[submit.schedule_id]
-            else:
-                schedule = CarServiceSchedule.objects.filter(_id=ObjectId(submit.schedule_id)).first()
-                schedules[submit.schedule_id] = schedule
-
-            if schedule.service_id in services:
-                service = services[schedule.service_id]
-            else:
-                service = CarService.objects.filter(_id=ObjectId(schedule.service_id)).first()
-                services[schedule.service_id] = service
-
-            status = statuses.filter(_id=ObjectId(submit.status_id)).first()
-
-            result.append({
-                "id": str(submit._id),
-                "client_id": submit.user_id,
-                "client_phone": client.phone,
-                "client_full_name": client.first_name + " " + client.last_name,
-                "car": car.manufacturer + " " + car.model,
-                "service_name": service.name,
-                "service_id": str(service._id),
-                "service_price": service.price,
-                "due_date": submit.date.strftime("%Y-%m-%d %H:%M"),
-                "status_id": str(status._id),
-                "employee_id": submit.employee_id
-            })
+            if client and car and schedule and service and status:
+                result.append({
+                    "id": str(submit._id),
+                    "client_id": submit.user_id,
+                    "client_phone": client.phone,
+                    "client_full_name": client.first_name + " " + client.last_name,
+                    "car": car.manufacturer + " " + car.model,
+                    "service_name": service.name,
+                    "service_id": str(service._id),
+                    "service_price": service.price,
+                    "due_date": submit.date.strftime("%Y-%m-%d %H:%M"),
+                    "status_id": str(status._id),
+                    "employee_id": submit.employee_id
+                })
         return result
 
     def remove_employee(self, user_id: int, employee_id: str):

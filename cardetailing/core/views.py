@@ -281,3 +281,14 @@ class SetSubmitStatusView(APIView):
             return Response({"message": "Status set"}, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()
+
+
+class DetailerStatsView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+
+    def get(self, request):
+        try:
+            result = car_service_manager.get_detailer_stats(self.request.user.id)
+            return Response(result, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
