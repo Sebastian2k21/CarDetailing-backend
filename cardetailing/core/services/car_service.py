@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -198,10 +199,7 @@ class CarServiceManager:
         services = list(CarService.objects.filter(detailer_id=detailer_id))
         service_map = {str(service._id): service for service in services}
 
-        schedules = list(CarServiceSchedule.objects.filter(service_id__in=service_map.keys()))
-        schedule_map = {str(schedule._id): schedule for schedule in schedules}
-
-        submits = list(CarServiceScheduleSubmit.objects.filter(schedule_id__in=schedule_map.keys()))
+        submits = list(CarServiceScheduleSubmit.objects.filter(service_id__in=service_map.keys()))
 
         user_ids = {submit.user_id for submit in submits}
         car_ids = {ObjectId(submit.car_id) for submit in submits}
@@ -215,11 +213,10 @@ class CarServiceManager:
         for submit in submits:
             client = users.get(int(submit.user_id))
             car = cars.get(submit.car_id)
-            schedule = schedule_map.get(submit.schedule_id)
-            service = service_map.get(schedule.service_id) if schedule else None
+            service = service_map.get(submit.service_id)
             status = statuses.get(submit.status_id)
 
-            if client and car and schedule and service and status:
+            if client and car and service and status:
                 result.append({
                     "id": str(submit._id),
                     "client_id": submit.user_id,
@@ -271,16 +268,55 @@ class CarServiceManager:
         submit.save()
 
     def get_detailer_stats(self, detailer_id: int):
-        orders = self.get_all_orders(detailer_id)
+        services = list(CarService.objects.filter(detailer_id=detailer_id))
+        service_map = {str(service._id): service for service in services}
+
+        submits = list(CarServiceScheduleSubmit.objects.filter(service_id__in=service_map.keys()))
+
         pending_status_id = str(self.get_or_error(SubmitStatus, name="pending")._id)
         in_progress_status_id = str(self.get_or_error(SubmitStatus, name="in progress")._id)
         done_status_id = str(self.get_or_error(SubmitStatus, name="done")._id)
 
         def count_status(status_id: str):
-            return len([o for o in orders if o["status_id"] == status_id])
+            return len([o for o in submits if o.status_id == status_id])
 
         return {
             "pending_count": count_status(pending_status_id),
             "in_progress_count": count_status(in_progress_status_id),
             "done_count": count_status(done_status_id),
+        }
+
+    def get_analytics(self, detailer_id: int, date_from: str, date_to: str):
+        services = list(CarService.objects.filter(detailer_id=detailer_id))
+        service_map = {str(service._id): service for service in services}
+
+        submits = list(CarServiceScheduleSubmit.objects.filter(service_id__in=service_map.keys(),
+                                                               date__gte=date_from,
+                                                               date__lte=date_to))
+
+        orders = defaultdict(int)
+        employees = defaultdict(int)
+        clients = defaultdict(int)
+        for submit in submits:
+            date_str = submit.date.isoformat().split("T")[0]
+            orders[date_str] += 1
+            if submit.employee_id:
+                employees[submit.employee_id] += 1
+            if submit.user_id:
+                clients[submit.user_id] += 1
+
+        employees_db = Employee.objects.filter(_id__in=[ObjectId(emp_id) for emp_id in employees.keys()])
+        employees_map = {str(emp._id):emp for emp in employees_db}
+
+        clients_db = AppUser.objects.filter(id__in=clients.keys())
+        clients_map = {str(cli.id):cli for cli in clients_db}
+
+        def full_name(emp):
+            return emp.first_name + " " + emp.last_name
+
+        return {
+            "orders": [{"date": date, "count": count} for date, count in orders.items()],
+            "employees": [{"employee_id": emp_id, "employee": full_name(employees_map[emp_id]), "count": count} for emp_id, count in employees.items()],
+            "clients": [{"client_id": cli_id, "client": full_name(clients_map[cli_id]), "count": count} for cli_id, count in clients.items()],
+            "services": [{"service_id": str(ser._id), "service": ser.name, "view_count": ser.view_count} for ser in services if ser.view_count > 0]
         }

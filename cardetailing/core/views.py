@@ -79,7 +79,11 @@ class CarServiceDetailsView(RetrieveAPIView):
     permission_classes = []
 
     def get_object(self):
-        return CarService.objects.filter(_id=ObjectId(self.kwargs["pk"])).first()
+        obj = CarService.objects.filter(_id=ObjectId(self.kwargs["pk"])).first()
+        if obj:
+            obj.view_count += 1
+            obj.save()
+        return obj
 
 
 class CarServiceDaysView(ListAPIView):
@@ -289,6 +293,15 @@ class DetailerStatsView(APIView):
     def get(self, request):
         try:
             result = car_service_manager.get_detailer_stats(self.request.user.id)
+            return Response(result, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
+
+
+class DetailerAnalyticsView(APIView):
+    def get(self, request, date_from, date_to):
+        try:
+            result = car_service_manager.get_analytics(self.request.user.id, date_from, date_to)
             return Response(result, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()

@@ -22,6 +22,7 @@ class CarService(models.Model):
     detailer_id = models.CharField(max_length=100)
     duration = models.IntegerField(default=0)
     label_color = models.CharField(max_length=10, default="#6aa84f")
+    view_count = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"[{self._id}] {self.name} {self.detailer_id}"
