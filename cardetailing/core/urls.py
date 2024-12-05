@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_detailer
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -26,21 +27,24 @@ urlpatterns = [
     path("profile/details", views.UserProfileView.as_view()),
     path("profile/role", views.UserRoleView.as_view()),
 
-    path("detailer/stats", views.DetailerStatsView.as_view()),
-    path("detailer/services", views.DetailerServicesListView.as_view()),
-    path("detailer/services/add", views.AddServiceView.as_view()),
-    path("detailer/orders", views.OrdersListView.as_view()),
-    path("detailer/orders/<order_id>/attach-employee", views.AttachEmployeeView.as_view()),
-    path("detailer/orders/<order_id>/set-status", views.SetSubmitStatusView.as_view()),
-    path("detailer/analytics/<date_from>/<date_to>", views.DetailerAnalyticsView.as_view()),
-
     path("cars", views.CarsView.as_view()),
     path("cars/add", views.AddCarView.as_view()),
     path("cars/<car_id>/delete", views.RemoveCarView.as_view()),
 
-    path("employees", views.EmployeesView.as_view()),
-    path("employees/add", views.AddEmployeeView.as_view()),
-    path("employees/<employee_id>/delete", views.RemoveEmployeeView.as_view()),
+    ## Detailer ----------------------------------------------------------------------------------------
 
-    path("status", views.SubmitStatusListView.as_view()),
+    path("detailer/stats", views_detailer.DetailerStatsView.as_view()),
+    path("detailer/services", views_detailer.DetailerServicesListView.as_view()),
+    path("detailer/services/add", views_detailer.AddServiceView.as_view()),
+    path("detailer/orders", views_detailer.OrdersListView.as_view()),
+    path("detailer/orders/<order_id>/attach-employee", views_detailer.AttachEmployeeView.as_view()),
+    path("detailer/orders/<order_id>/set-status", views_detailer.SetSubmitStatusView.as_view()),
+    path("detailer/analytics/<date_from>/<date_to>", views_detailer.DetailerAnalyticsView.as_view()),
+    path("detailer/clients", views_detailer.DetailerClientsView.as_view()),
+
+    path("employees", views_detailer.EmployeesView.as_view()),
+    path("employees/add", views_detailer.AddEmployeeView.as_view()),
+    path("employees/<employee_id>/delete", views_detailer.RemoveEmployeeView.as_view()),
+
+    path("status", views_detailer.SubmitStatusListView.as_view()),
 ]

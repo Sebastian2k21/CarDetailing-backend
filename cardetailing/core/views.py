@@ -170,38 +170,12 @@ class UserRoleView(APIView):
             return e.get_response()
 
 
-class DetailerServicesListView(ListAPIView):
-    serializer_class = CarServiceSerializer
-
-    def get_queryset(self):
-        return CarService.objects.filter(detailer_id=self.request.user.id)
-
-
-class AddServiceView(APIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-
-    def post(self, request):
-        try:
-            car_service_manager.add_service(request.user.id, request.user.role_id, request.data)
-            return Response({"message": "Added"}, status=status.HTTP_200_OK)
-        except ServiceException as e:
-            return e.get_response()
-
-
 class CarsView(ListAPIView):
     permission_classes = [IsAuthenticated, IsClient]
     serializer_class = CarSerializer
 
     def get_queryset(self):
         return Car.objects.filter(user_id=self.request.user.id, is_removed=0)
-
-
-class EmployeesView(ListAPIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-    serializer_class = EmployeeSerializer
-
-    def get_queryset(self):
-        return Employee.objects.filter(detailer_id=self.request.user.id, is_removed=0)
 
 
 class AddCarView(APIView):
@@ -215,17 +189,6 @@ class AddCarView(APIView):
         return Response({"message": "Done"}, status=status.HTTP_200_OK)
 
 
-class AddEmployeeView(APIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-
-    def post(self, request):
-        serializer = EmployeeAddSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.validated_data["detailer_id"] = request.user.id
-        serializer.save()
-        return Response({"message": "Done"}, status=status.HTTP_200_OK)
-
-
 class RemoveCarView(APIView):
     permission_classes = [IsAuthenticated, IsClient]
 
@@ -233,75 +196,5 @@ class RemoveCarView(APIView):
         try:
             car_service_manager.remove_car(request.user.id, car_id)
             return Response({"message": "Removed"}, status=status.HTTP_200_OK)
-        except ServiceException as e:
-            return e.get_response()
-
-
-class RemoveEmployeeView(APIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-
-    def delete(self, request, employee_id):
-        try:
-            car_service_manager.remove_employee(request.user.id, employee_id)
-            return Response({"message": "Removed"}, status=status.HTTP_200_OK)
-        except ServiceException as e:
-            return e.get_response()
-
-
-class OrdersListView(APIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-
-    def get(self, request):
-        try:
-            result = car_service_manager.get_all_orders(self.request.user.id)
-            return Response(result, status=status.HTTP_200_OK)
-        except ServiceException as e:
-            return e.get_response()
-
-
-class AttachEmployeeView(APIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-
-    def post(self, request, order_id):
-        try:
-            car_service_manager.attach_employee(request.user.id, order_id, request.data["employee_id"])
-            return Response({"message": "Attached"}, status=status.HTTP_200_OK)
-        except ServiceException as e:
-            return e.get_response()
-
-
-class SubmitStatusListView(ListAPIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-    queryset = SubmitStatus.objects.all()
-    serializer_class = SubmitStatusSerializer
-
-
-class SetSubmitStatusView(APIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-
-    def post(self, request, order_id):
-        try:
-            car_service_manager.set_submit_status(request.user.id, order_id, request.data["status_id"])
-            return Response({"message": "Status set"}, status=status.HTTP_200_OK)
-        except ServiceException as e:
-            return e.get_response()
-
-
-class DetailerStatsView(APIView):
-    permission_classes = [IsAuthenticated, IsDetailer]
-
-    def get(self, request):
-        try:
-            result = car_service_manager.get_detailer_stats(self.request.user.id)
-            return Response(result, status=status.HTTP_200_OK)
-        except ServiceException as e:
-            return e.get_response()
-
-
-class DetailerAnalyticsView(APIView):
-    def get(self, request, date_from, date_to):
-        try:
-            result = car_service_manager.get_analytics(self.request.user.id, date_from, date_to)
-            return Response(result, status=status.HTTP_200_OK)
         except ServiceException as e:
             return e.get_response()

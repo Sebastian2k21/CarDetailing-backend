@@ -312,6 +312,8 @@ class CarServiceManager:
         clients_map = {str(cli.id):cli for cli in clients_db}
 
         def full_name(emp):
+            if not emp.first_name:
+                return f"Client {emp.id}"
             return emp.first_name + " " + emp.last_name
 
         return {
@@ -320,3 +322,19 @@ class CarServiceManager:
             "clients": [{"client_id": cli_id, "client": full_name(clients_map[cli_id]), "count": count} for cli_id, count in clients.items()],
             "services": [{"service_id": str(ser._id), "service": ser.name, "view_count": ser.view_count} for ser in services if ser.view_count > 0]
         }
+
+    def get_detailer_clients(self, detailer_id: int):
+        services = list(CarService.objects.filter(detailer_id=detailer_id))
+        service_map = {str(service._id): service for service in services}
+
+        submits = list(CarServiceScheduleSubmit.objects.filter(service_id__in=service_map.keys()))
+        client_ids = [int(s.user_id) for s in submits]
+
+        clients = AppUser.objects.filter(id__in=client_ids)
+        return [{
+            "id": c.id,
+            "email": c.email,
+            "first_name": c.first_name,
+            "last_name": c.last_name,
+            "phone": c.phone
+        } for c in clients]
