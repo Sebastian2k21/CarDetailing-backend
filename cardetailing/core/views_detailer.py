@@ -127,3 +127,9 @@ class DetailerServicesListView(ListAPIView):
 
     def get_queryset(self):
         return CarService.objects.filter(detailer_id=self.request.user.id)
+
+
+class DetailerClientSubmitsView(DetailerGetBaseAPIView):
+    def get_data(self, request, **kwargs):
+        result = car_service_manager.get_detailer_client_submits(self.request.user.id, kwargs["client_id"])
+        return Response(result, status=status.HTTP_200_OK)

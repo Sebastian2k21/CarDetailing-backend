@@ -34,13 +34,18 @@ urlpatterns = [
     ## Detailer ----------------------------------------------------------------------------------------
 
     path("detailer/stats", views_detailer.DetailerStatsView.as_view()),
+
     path("detailer/services", views_detailer.DetailerServicesListView.as_view()),
     path("detailer/services/add", views_detailer.AddServiceView.as_view()),
+
     path("detailer/orders", views_detailer.OrdersListView.as_view()),
     path("detailer/orders/<order_id>/attach-employee", views_detailer.AttachEmployeeView.as_view()),
     path("detailer/orders/<order_id>/set-status", views_detailer.SetSubmitStatusView.as_view()),
+
     path("detailer/analytics/<date_from>/<date_to>", views_detailer.DetailerAnalyticsView.as_view()),
+
     path("detailer/clients", views_detailer.DetailerClientsView.as_view()),
+    path("detailer/clients/<client_id>/submits", views_detailer.DetailerClientSubmitsView.as_view()),
 
     path("employees", views_detailer.EmployeesView.as_view()),
     path("employees/add", views_detailer.AddEmployeeView.as_view()),

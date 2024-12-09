@@ -338,3 +338,41 @@ class CarServiceManager:
             "last_name": c.last_name,
             "phone": c.phone
         } for c in clients]
+
+    def get_detailer_client_submits(self, detailer_id: int, client_id: int):
+        #TODO: dodac normalne laczenia w jednym zapytaniu
+
+        services = list(CarService.objects.filter(detailer_id=detailer_id))
+        service_map = {str(service._id): service for service in services}
+
+        submits = list(CarServiceScheduleSubmit.objects.filter(service_id__in=service_map.keys(),
+                                                               user_id=client_id))
+
+        car_ids = {ObjectId(submit.car_id) for submit in submits}
+        status_ids = {ObjectId(submit.status_id) for submit in submits}
+
+        cars = {str(car._id): car for car in Car.objects.filter(_id__in=car_ids)}
+        statuses = {str(status._id): status for status in SubmitStatus.objects.filter(_id__in=status_ids)}
+
+        employee_ids = {ObjectId(submit.employee_id) for submit in submits}
+        employees = {str(emp._id): emp for emp in Employee.objects.filter(_id__in=employee_ids)}
+
+        result = []
+        for submit in submits:
+            car = cars.get(submit.car_id)
+            service = service_map.get(submit.service_id)
+            status = statuses.get(submit.status_id)
+            employee = employees.get(submit.employee_id)
+
+            result.append({
+                "id": str(submit._id),
+                "client_id": submit.user_id,
+                "car": car.manufacturer + " " + car.model if car else None,
+                "service_name": service.name,
+                "service_id": str(service._id),
+                "service_price": service.price,
+                "due_date": submit.date.strftime("%Y-%m-%d %H:%M"),
+                "status": status.name if status else None,
+                "employee": employee.first_name + " " + employee.last_name if employee else None
+            })
+        return result
