@@ -336,12 +336,13 @@ class CarServiceManager:
             "email": c.email,
             "first_name": c.first_name,
             "last_name": c.last_name,
-            "phone": c.phone
+            "phone": c.phone,
+            "street": c.street,
+            "city": c.city,
+            "zip_code": c.zip_code
         } for c in clients]
 
     def get_detailer_client_submits(self, detailer_id: int, client_id: int):
-        #TODO: dodac normalne laczenia w jednym zapytaniu
-
         services = list(CarService.objects.filter(detailer_id=detailer_id))
         service_map = {str(service._id): service for service in services}
 

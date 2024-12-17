@@ -57,7 +57,7 @@ class CarServiceScheduleSubmit(models.Model):
     service_id = models.CharField(max_length=100)
     car_id = models.CharField(max_length=100)
     status_id = models.CharField(max_length=100, null=True, blank=True)
-    employee_id = models.CharField(max_length=100, null=True, blank=True    )
+    employee_id = models.CharField(max_length=100, null=True, blank=True)
 
 
 class Car(models.Model):
@@ -86,3 +86,14 @@ class Employee(models.Model):
     detailer_id = models.CharField(max_length=100)
     is_removed = models.IntegerField(default=0)
 
+
+class Invoice(models.Model):
+    first_name = models.CharField(max_length=50, null=True, blank=True)
+    last_name = models.CharField(max_length=50, null=True, blank=True)
+    email = models.CharField(max_length=50, null=True, blank=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    street = models.CharField(max_length=50, null=True, blank=True)
+    city = models.CharField(max_length=50, null=True, blank=True)
+    zip_code = models.CharField(max_length=10, null=True, blank=True)
+    nip = models.CharField(max_length=11, null=True, blank=True)
+    services = models.JSONField()
