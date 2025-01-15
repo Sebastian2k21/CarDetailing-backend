@@ -1,7 +1,9 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+from io import BytesIO
 from typing import Any
 
+import pdfkit
 from bson import ObjectId
 from django.core.files.base import ContentFile
 from rest_framework import status
@@ -10,11 +12,10 @@ import base64
 import uuid
 
 from core.exceptions import ServiceException
-from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService, Role, AppUser, SubmitStatus, Employee
+from core.models import CarServiceSchedule, CarServiceScheduleSubmit, CarService, Role, AppUser, SubmitStatus, Employee, \
+    Invoice, Car
 
 from core.utils import is_correct_iso_date, get_dates_diff_days
-
-from core.models import Car
 
 
 class CarServiceManager:
@@ -306,10 +307,10 @@ class CarServiceManager:
                 clients[submit.user_id] += 1
 
         employees_db = Employee.objects.filter(_id__in=[ObjectId(emp_id) for emp_id in employees.keys()])
-        employees_map = {str(emp._id):emp for emp in employees_db}
+        employees_map = {str(emp._id): emp for emp in employees_db}
 
         clients_db = AppUser.objects.filter(id__in=clients.keys())
-        clients_map = {str(cli.id):cli for cli in clients_db}
+        clients_map = {str(cli.id): cli for cli in clients_db}
 
         def full_name(emp):
             if not emp.first_name:
@@ -318,9 +319,12 @@ class CarServiceManager:
 
         return {
             "orders": [{"date": date, "count": count} for date, count in orders.items()],
-            "employees": [{"employee_id": emp_id, "employee": full_name(employees_map[emp_id]), "count": count} for emp_id, count in employees.items()],
-            "clients": [{"client_id": cli_id, "client": full_name(clients_map[cli_id]), "count": count} for cli_id, count in clients.items()],
-            "services": [{"service_id": str(ser._id), "service": ser.name, "view_count": ser.view_count} for ser in services if ser.view_count > 0]
+            "employees": [{"employee_id": emp_id, "employee": full_name(employees_map[emp_id]), "count": count} for
+                          emp_id, count in employees.items()],
+            "clients": [{"client_id": cli_id, "client": full_name(clients_map[cli_id]), "count": count} for
+                        cli_id, count in clients.items()],
+            "services": [{"service_id": str(ser._id), "service": ser.name, "view_count": ser.view_count} for ser in
+                         services if ser.view_count > 0]
         }
 
     def get_detailer_clients(self, detailer_id: int):
@@ -377,3 +381,73 @@ class CarServiceManager:
                 "employee": employee.first_name + " " + employee.last_name if employee else None
             })
         return result
+
+    def create_invoice(self, detailer_id: int, invoice_data: dict[str, Any]):
+        if "nip" not in invoice_data:
+            invoice_data["nip"] = None
+
+        if not invoice_data["services"]:
+            raise ServiceException(message="Empty services list",
+                                   status_code=status.HTTP_400_BAD_REQUEST)
+
+        amount_brutto = sum([s["price"] for s in invoice_data["services"]])
+
+        invoice = Invoice(detailer_id=detailer_id,
+                          city=invoice_data["city"],
+                          email=invoice_data["email"],
+                          first_name=invoice_data["first_name"],
+                          last_name=invoice_data["last_name"],
+                          nip=invoice_data["nip"],
+                          services=invoice_data["services"],
+                          street=invoice_data["street"],
+                          zip_code=invoice_data["zip_code"],
+                          amount_brutto=amount_brutto)
+
+        invoice.save()
+
+    def get_invoice_file(self, detailer_id: int, invoice_id: str):
+        invoice = self.get_or_error(Invoice, invoice_id)
+        detailer = self.get_or_error(AppUser, id=detailer_id)
+
+        if invoice.detailer_id != str(detailer.id):
+            raise ServiceException(message="User has not permission to do this action",
+                                   status_code=status.HTTP_403_FORBIDDEN)
+
+        html_content = open("invoice_template.html", encoding="utf-8").read()
+
+        services_html = ""
+        for i, service in enumerate(invoice.services):
+            services_html += f"""<tr>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{i+1}</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["name"]}</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">1</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">szt.</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["price"]:0.2f} zł</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">23</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["price"]*0.23:0.2f} zł</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["price"]*(1-0.23):0.2f} zł</td>
+            </tr>"""
+
+        invoice_data = {
+            "invoice_number": invoice._id,
+            "invoice_date": invoice.date_created.strftime("%Y-%m-%d"),
+            "detailer_name": detailer.company_name,
+            "detailer_address": detailer.street + " " + detailer.city + " " + detailer.zip_code,
+            "detailer_nip": "" if detailer.nip is None else detailer.nip,
+            "client_name": invoice.first_name + " " + invoice.last_name,
+            "client_address": invoice.street + " " + invoice.zip_code,
+            "client_nip": "" if invoice.nip is None else invoice.nip,
+            "services": services_html,
+            "total_netto": invoice.amount_brutto * (1-0.23),
+            "total_vat": invoice.amount_brutto * 0.23,
+            "total_brutto": invoice.amount_brutto,
+        }
+        for key, value in invoice_data.items():
+            html_content = html_content.replace("{{" + key + "}}", str(value))
+        path_to_wkhtmltopdf = r"C:\Users\Sebastian\Desktop\bin\wkhtmltopdf.exe"
+        config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
+        pdf_file = BytesIO()
+        pdf_output = pdfkit.from_string(html_content, False, configuration=config)
+        pdf_file.write(pdf_output)
+        pdf_file.seek(0)
+        return pdf_file

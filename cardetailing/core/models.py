@@ -88,12 +88,17 @@ class Employee(models.Model):
 
 
 class Invoice(models.Model):
+    id = models.IntegerField()
+    _id = models.ObjectIdField()
+    number = models.IntegerField(default=1)
     first_name = models.CharField(max_length=50, null=True, blank=True)
     last_name = models.CharField(max_length=50, null=True, blank=True)
     email = models.CharField(max_length=50, null=True, blank=True)
-    phone = models.CharField(max_length=20, null=True, blank=True)
     street = models.CharField(max_length=50, null=True, blank=True)
     city = models.CharField(max_length=50, null=True, blank=True)
     zip_code = models.CharField(max_length=10, null=True, blank=True)
     nip = models.CharField(max_length=11, null=True, blank=True)
     services = models.JSONField()
+    detailer_id = models.CharField(max_length=100)
+    date_created = models.DateTimeField(auto_now_add=True)
+    amount_brutto = models.FloatField(default=0)

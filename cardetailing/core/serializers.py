@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import CarService, AppUser, CarServiceSchedule, Car, Employee, SubmitStatus
+from .models import CarService, AppUser, CarServiceSchedule, Car, Employee, SubmitStatus, Invoice
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -90,3 +90,9 @@ class SubmitStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubmitStatus
         fields = ["_id", "name"]
+
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invoice
+        fields = ["_id", "date_created", "first_name", "last_name", "amount_brutto"]

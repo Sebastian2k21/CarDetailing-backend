@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Faktura</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 20px; padding: 0;">
+
+<!-- Kontener główny faktury -->
+<div style="
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+">
+
+  <!-- Nagłówek Faktury -->
+  <div style="margin-bottom: 20px;">
+    <h1 style="margin: 0; padding: 0;">Faktura VAT</h1>
+    <p>Numer faktury: <strong>{{invoice_number}}</strong></p>
+    <p>Data wystawienia: <strong>{{invoice_date}}</strong></p>
+  </div>
+
+  <!-- Dane sprzedawcy i nabywcy obok siebie -->
+  <div style="
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  ">
+    <!-- Sprzedawca -->
+    <div style="
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+    ">
+      <h2 style="margin: 0 0 10px 0; font-size: 16px;">Sprzedawca</h2>
+      <p style="margin: 2px 0;">Nazwa firmy: <strong>{{detailer_name}}</strong></p>
+      <p style="margin: 2px 0;">Adres: <strong>{{detailer_address}}</strong></p>
+      <p style="margin: 2px 0;">NIP: <strong>{{detailer_nip}}</strong></p>
+    </div>
+    <!-- Nabywca -->
+    <div style="
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+    ">
+      <h2 style="margin: 0 0 10px 0; font-size: 16px;">Nabywca</h2>
+      <p style="margin: 2px 0;">Nazwa firmy: <strong>{{client_name}}</strong></p>
+      <p style="margin: 2px 0;">Adres: <strong>{{client_address}}</strong></p>
+      <p style="margin: 2px 0;">NIP: <strong>{{client_nip}}</strong></p>
+    </div>
+  </div>
+
+  <!-- Tabela z usługami/towarami -->
+  <div style="margin-bottom: 20px;">
+    <h2 style="margin: 0 0 10px 0; font-size: 18px;">Wykonane usługi / Sprzedane towary</h2>
+    <table style="
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    ">
+      <thead style="background: #f0f0f0;">
+        <tr>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Lp.</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Nazwa Usługi/Towaru</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Ilość</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Jedn.</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Cena netto</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">VAT (%)</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Kwota VAT</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Wartość brutto</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Powtarzaj te wiersze dla kolejnych pozycji -->
+        {{services}}
+        <!-- Koniec powtórzeń -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Podsumowanie -->
+  <div style="margin-top: 20px;">
+    <p><strong>Razem netto: </strong>{{total_netto}} zł</p>
+    <p><strong>Razem VAT: </strong>{{total_vat}} zł</p>
+    <p><strong>Razem brutto: </strong>{{total_brutto}} zł</p>
+  </div>
+
+  <!-- Podpisy -->
+  <div style="margin-top: 50px">
+    <div>
+      <p>Podpis sprzedawcy &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Podpis nabywcy</p>
+      <p style="margin-top: 40px">________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _______________</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

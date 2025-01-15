@@ -1,15 +1,16 @@
 from bson import ObjectId
+from django.http import HttpResponse
 from rest_framework import status
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .exceptions import ServiceException
-from .models import CarService, Employee, SubmitStatus
+from .models import CarService, Employee, SubmitStatus, Invoice
 from .permissions import IsDetailer
 from .serializers import CarServiceSerializer, \
-    EmployeeAddSerializer, EmployeeSerializer, SubmitStatusSerializer
+    EmployeeAddSerializer, EmployeeSerializer, SubmitStatusSerializer, InvoiceSerializer
 from .services.car_service import CarServiceManager
 
 car_service_manager = CarServiceManager()
@@ -133,3 +134,30 @@ class DetailerClientSubmitsView(DetailerGetBaseAPIView):
     def get_data(self, request, **kwargs):
         result = car_service_manager.get_detailer_client_submits(self.request.user.id, kwargs["client_id"])
         return Response(result, status=status.HTTP_200_OK)
+
+
+class DetailerInvoiceCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+
+    def post(self, request):
+        try:
+            car_service_manager.create_invoice(request.user.id, request.data)
+            return Response({"message": "Created"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()
+
+
+class DetailerInvoiceDownloadView(DetailerGetBaseAPIView):
+    def get_data(self, request, **kwargs):
+        file = car_service_manager.get_invoice_file(self.request.user.id, kwargs["invoice_id"])
+        response = HttpResponse(file, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="invoice_{kwargs["invoice_id"]}.pdf"'
+        return response
+
+
+class DetailerInvoiceListAPIView(ListAPIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+    serializer_class = InvoiceSerializer
+
+    def get_queryset(self):
+        return Invoice.objects.filter(detailer_id=self.request.user.id)
