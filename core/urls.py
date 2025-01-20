@@ -56,4 +56,5 @@ urlpatterns = [
     path("detailer/invoices", views_detailer.DetailerInvoiceListAPIView.as_view()),
     path("detailer/invoices/create", views_detailer.DetailerInvoiceCreateView.as_view()),
     path("detailer/invoices/<invoice_id>/download", views_detailer.DetailerInvoiceDownloadView.as_view()),
+    path("detailer/invoices/<invoice_id>/delete", views_detailer.RemoveDetailerInvoiceView.as_view()),
 ]

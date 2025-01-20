@@ -1,7 +1,7 @@
 from bson import ObjectId
 from django.http import HttpResponse
 from rest_framework import status
-from rest_framework.generics import ListAPIView, CreateAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -149,9 +149,9 @@ class DetailerInvoiceCreateView(APIView):
 
 class DetailerInvoiceDownloadView(DetailerGetBaseAPIView):
     def get_data(self, request, **kwargs):
-        file = car_service_manager.get_invoice_file(self.request.user.id, kwargs["invoice_id"])
+        file, filename = car_service_manager.get_invoice_file(self.request.user.id, kwargs["invoice_id"])
         response = HttpResponse(file, content_type="application/pdf")
-        response["Content-Disposition"] = f'attachment; filename="invoice_{kwargs["invoice_id"]}.pdf"'
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
 
@@ -161,3 +161,14 @@ class DetailerInvoiceListAPIView(ListAPIView):
 
     def get_queryset(self):
         return Invoice.objects.filter(detailer_id=self.request.user.id)
+
+
+class RemoveDetailerInvoiceView(APIView):
+    permission_classes = [IsAuthenticated, IsDetailer]
+
+    def delete(self, request, invoice_id):
+        try:
+            car_service_manager.remove_invoice(request.user.id, invoice_id)
+            return Response({"message": "Removed"}, status=status.HTTP_200_OK)
+        except ServiceException as e:
+            return e.get_response()

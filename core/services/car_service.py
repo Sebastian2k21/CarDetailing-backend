@@ -6,6 +6,7 @@ from typing import Any
 import pdfkit
 from bson import ObjectId
 from django.core.files.base import ContentFile
+from django.db.models import Max
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 import base64
@@ -392,6 +393,12 @@ class CarServiceManager:
 
         amount_brutto = sum([s["price"] for s in invoice_data["services"]])
 
+        invoice_max_number = Invoice.objects.filter(detailer_id=detailer_id, date_created__year=datetime.now().year) \
+            .aggregate(Max('number'))['number__max']
+
+        if not invoice_max_number:
+            invoice_max_number = 0
+
         invoice = Invoice(detailer_id=detailer_id,
                           city=invoice_data["city"],
                           email=invoice_data["email"],
@@ -401,7 +408,8 @@ class CarServiceManager:
                           services=invoice_data["services"],
                           street=invoice_data["street"],
                           zip_code=invoice_data["zip_code"],
-                          amount_brutto=amount_brutto)
+                          amount_brutto=amount_brutto,
+                          number=invoice_max_number + 1)
 
         invoice.save()
 
@@ -418,18 +426,19 @@ class CarServiceManager:
         services_html = ""
         for i, service in enumerate(invoice.services):
             services_html += f"""<tr>
-              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{i+1}</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{i + 1}</td>
               <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["name"]}</td>
               <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">1</td>
               <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">szt.</td>
               <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["price"]:0.2f} zł</td>
               <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">23</td>
-              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["price"]*0.23:0.2f} zł</td>
-              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["price"]*(1-0.23):0.2f} zł</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["price"] * 0.23:0.2f} zł</td>
+              <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">{service["price"] * (1 - 0.23):0.2f} zł</td>
             </tr>"""
 
+        invoice_number = f"FV/{invoice.date_created.strftime('%Y')}/{invoice.number:04}"
         invoice_data = {
-            "invoice_number": invoice._id,
+            "invoice_number": invoice_number,
             "invoice_date": invoice.date_created.strftime("%Y-%m-%d"),
             "detailer_name": detailer.company_name,
             "detailer_address": detailer.street + " " + detailer.city + " " + detailer.zip_code,
@@ -438,7 +447,7 @@ class CarServiceManager:
             "client_address": invoice.street + " " + invoice.zip_code,
             "client_nip": "" if invoice.nip is None else invoice.nip,
             "services": services_html,
-            "total_netto": invoice.amount_brutto * (1-0.23),
+            "total_netto": invoice.amount_brutto * (1 - 0.23),
             "total_vat": invoice.amount_brutto * 0.23,
             "total_brutto": invoice.amount_brutto,
         }
@@ -450,4 +459,11 @@ class CarServiceManager:
         pdf_output = pdfkit.from_string(html_content, False, configuration=config)
         pdf_file.write(pdf_output)
         pdf_file.seek(0)
-        return pdf_file
+        return pdf_file, invoice_number + ".pdf"
+
+    def remove_invoice(self, detailer_id: int, employee_id: str):
+        invoice = Invoice.objects.filter(_id=ObjectId(employee_id), detailer_id=str(detailer_id)).first()
+        if not invoice:
+            raise ServiceException(message="Invoice not found",
+                                   status_code=status.HTTP_400_BAD_REQUEST)
+        invoice.delete()
