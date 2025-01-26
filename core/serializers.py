@@ -93,6 +93,11 @@ class SubmitStatusSerializer(serializers.ModelSerializer):
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
+    number = serializers.SerializerMethodField()
+
+    def get_number(self, obj):
+        return f"FV/{obj.date_created.strftime('%Y')}/{obj.number:04}"
+
     class Meta:
         model = Invoice
-        fields = ["_id", "date_created", "first_name", "last_name", "amount_brutto"]
+        fields = ["_id", "date_created", "first_name", "last_name", "amount_brutto", "number"]
