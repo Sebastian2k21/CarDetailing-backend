@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from io import BytesIO
 from typing import Any
+import os
 
 import pdfkit
 from bson import ObjectId
@@ -453,7 +454,7 @@ class CarServiceManager:
         }
         for key, value in invoice_data.items():
             html_content = html_content.replace("{{" + key + "}}", str(value))
-        path_to_wkhtmltopdf = r"C:\Users\Sebastian\Desktop\bin\wkhtmltopdf.exe"
+        path_to_wkhtmltopdf = os.environ.get("WKHTMLTOPDF_PATH")
         config = pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf)
         pdf_file = BytesIO()
         pdf_output = pdfkit.from_string(html_content, False, configuration=config)
