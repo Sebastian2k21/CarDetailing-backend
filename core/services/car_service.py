@@ -169,10 +169,12 @@ class CarServiceManager:
             raise ServiceException(message="User has invalid role to add service",
                                    status_code=status.HTTP_400_BAD_REQUEST)
 
-        format, imgstr = service_data["image_file"].split(';base64,')
-        ext = format.split('/')[-1]
-
-        image = ContentFile(base64.b64decode(imgstr), name=f'{uuid.uuid4()}.' + ext)
+        if "image_file" in service_data and service_data["image_file"] is not None:
+            format, imgstr = service_data["image_file"].split(';base64,')
+            ext = format.split('/')[-1]
+            image = ContentFile(base64.b64decode(imgstr), name=f'{uuid.uuid4()}.' + ext)
+        else:
+            image = None
 
         car_service = CarService(name=service_data["name"],
                                  description=service_data["description"],
@@ -391,6 +393,9 @@ class CarServiceManager:
         if not invoice_data["services"]:
             raise ServiceException(message="Empty services list",
                                    status_code=status.HTTP_400_BAD_REQUEST)
+
+        for service in invoice_data["services"]:
+            service["price"] = float(service["price"])
 
         amount_brutto = sum([s["price"] for s in invoice_data["services"]])
 

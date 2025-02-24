@@ -10,6 +10,7 @@ class AppUser(AbstractUser):
     role_id = models.CharField(max_length=100)
     nip = models.CharField(max_length=11, null=True, blank=True)
     company_name = models.CharField(max_length=200, null=True, blank=True)
+    objects = models.Manager()
 
 
 class CarService(models.Model):
@@ -18,11 +19,12 @@ class CarService(models.Model):
     name = models.CharField(max_length=100)
     price = models.FloatField()
     description = models.TextField()
-    image = models.ImageField()
+    image = models.ImageField(null=True, blank=True)
     detailer_id = models.CharField(max_length=100)
     duration = models.IntegerField(default=0)
     label_color = models.CharField(max_length=10, default="#6aa84f")
     view_count = models.PositiveIntegerField(default=0)
+    objects = models.Manager()
 
     def __str__(self):
         return f"[{self._id}] {self.name} {self.detailer_id}"
@@ -32,6 +34,7 @@ class Role(models.Model):
     _id = models.ObjectIdField()
     name = models.CharField(max_length=50)
     display_name = models.CharField(max_length=50)
+    objects = models.Manager()
 
 
 class CarServiceSchedule(models.Model):
@@ -40,6 +43,7 @@ class CarServiceSchedule(models.Model):
     service_id = models.CharField(max_length=100)
     day_of_week = models.PositiveIntegerField()
     time = models.TimeField()
+    objects = models.Manager()
 
     def __str__(self):
         return f"{self.service_id} | {self.day_of_week} {self.time}"
@@ -58,6 +62,7 @@ class CarServiceScheduleSubmit(models.Model):
     car_id = models.CharField(max_length=100)
     status_id = models.CharField(max_length=100, null=True, blank=True)
     employee_id = models.CharField(max_length=100, null=True, blank=True)
+    objects = models.Manager()
 
 
 class Car(models.Model):
@@ -68,12 +73,14 @@ class Car(models.Model):
     year_of_production = models.IntegerField()
     user_id = models.CharField(max_length=100)
     is_removed = models.IntegerField(default=0)
+    objects = models.Manager()
 
 
 class SubmitStatus(models.Model):
     id = models.IntegerField()
     _id = models.ObjectIdField()
     name = models.CharField(max_length=50)
+    objects = models.Manager()
 
 
 class Employee(models.Model):
@@ -85,6 +92,7 @@ class Employee(models.Model):
     experience = models.IntegerField()
     detailer_id = models.CharField(max_length=100)
     is_removed = models.IntegerField(default=0)
+    objects = models.Manager()
 
 
 class Invoice(models.Model):
@@ -102,3 +110,4 @@ class Invoice(models.Model):
     detailer_id = models.CharField(max_length=100)
     date_created = models.DateTimeField(auto_now_add=True)
     amount_brutto = models.FloatField(default=0)
+    objects = models.Manager()
